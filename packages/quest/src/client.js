@@ -853,6 +853,11 @@ function apply(ctx) {
       return () => { try { clearInterval(t) } catch (e) {} }
     }, [])
     React.useEffect(() => {
+      // 静默轮询：Agent 通过 quest_* 工具新建/修改任务后，面板与追踪条自动刷新（无需手动刷新网页）
+      const t = setInterval(() => { loadData() }, 5000)
+      return () => { try { clearInterval(t) } catch (e) {} }
+    }, [])
+    React.useEffect(() => {
       if (typeof window === 'undefined' || !window.addEventListener) return
       const onKey = (e) => {
         if (e.defaultPrevented) return
