@@ -182,27 +182,26 @@ function apply(ctx) {
       return s
     }
     const rpc = (method, args) => fetch('/_dsh/backpack/api', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ method: method, args: args || null }), credentials: 'same-origin' }).then((r) => r.json()).catch((e) => ({ ok: false, error: String((e && e.message) || e) }))
-    // 皮肤：背景图铺在 body，全屏浅色容器改为半透明浅色雾（透出背景图），文字保持 DSH 浅色主题默认深色 → 始终可读
+    // 皮肤：背景图铺在 body，把 DSH 布局层容器（主框架/侧栏/内容区）改为半透明浅色雾（50% 透出背景图，全屏可见），文字保持浅色主题深色 → 可读
     function skinCover() {
-      // 把覆盖视口 ≥85% 的不透明背景容器改为半透明白（背景图雾化透出，深色文字依然可读；小卡片/输入框保留自身背景）
+      // 覆盖"布局层"容器：宽 ≥15% 视口 且 高 ≥50% 视口 的不透明背景容器（覆盖主框架与侧栏；输入框/小卡片保留自身背景）
       try {
         const vw = window.innerWidth, vh = window.innerHeight
         const queue = [document.body]
         let seen = 0
-        for (let i = 0; i < queue.length && seen < 500; i++) {
+        for (let i = 0; i < queue.length && seen < 600; i++) {
           const el = queue[i]
           for (const c of el.children) {
             if (!c || typeof c.getBoundingClientRect !== 'function') continue
             seen++
             if (c.children && c.children.length) queue.push(c)
             const r = c.getBoundingClientRect()
-            if (r.width >= vw * 0.85 && r.height >= vh * 0.85) {
+            if (r.width >= vw * 0.15 && r.height >= vh * 0.5) {
               const s = getComputedStyle(c)
               if (s.backgroundColor && s.backgroundColor !== 'rgba(0, 0, 0, 0)' && s.backgroundColor !== 'transparent') {
                 c.setAttribute('data-ggame-skin', '1')
-                c.style.setProperty('background-color', 'rgba(250, 250, 248, 0.66)', 'important')
-                // 背景模糊：透出的背景图柔和化，提升文字对比度
-                c.style.setProperty('backdrop-filter', 'blur(3px)', 'important')
+                // 50% 图片不透明度：白雾 alpha 0.5（图清晰透出，不模糊）
+                c.style.setProperty('background-color', 'rgba(250, 250, 248, 0.5)', 'important')
               }
             }
           }
