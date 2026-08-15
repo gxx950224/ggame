@@ -93,7 +93,8 @@ function apply(ctx) {
       '.bp-grid{display:grid;gap:4px}' +
       '.bp-slot{position:relative;width:80px;height:80px;border:1px solid #37312a;border-radius:6px;background:linear-gradient(150deg,#29241e,#201b16);box-shadow:inset 0 1px 0 rgba(255,255,255,.04),inset 0 0 4px rgba(0,0,0,.5);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color .1s}' +
       '.bp-slot:hover{border-color:#5a5345;box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 0 7px rgba(133,127,103,.25)}' +
-      '.bp-slot.selected{border-color:#c7b68c;box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 0 0 1px #c7b68c,0 0 10px rgba(199,182,140,.3)}' +
+      '.bp-slot.selected{border-color:#c7b68c;box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 0 0 1px #c7b68c,0 0 14px rgba(199,182,140,.55)}' +
+      '.bp-selmark{position:absolute;right:-5px;bottom:-5px;background:#c7b68c;color:#0f0c0a;border-radius:6px;font-size:11px;padding:1px 5px;font-weight:700;z-index:3;box-shadow:0 0 6px rgba(199,182,140,.6)}' +
       '.bp-slot.dragover{border-color:#c7b68c;box-shadow:0 0 0 1px #c7b68c,0 0 12px rgba(199,182,140,.45)}' +
       '.bp-quick{position:absolute;left:3px;right:3px;bottom:3px;display:flex;justify-content:center;gap:2px;background:rgba(12,10,8,.9);border:1px solid #4a4338;border-radius:5px;padding:2px;z-index:3}' +
       '.bp-quick button{width:22px;height:20px;border:0;background:transparent;color:#c7b68c;cursor:pointer;font-size:11px;line-height:1}' +
@@ -497,6 +498,7 @@ function apply(ctx) {
         React.createElement('div', { className: 'bp-slot-name' }, item.name),
         item.count > 1 ? React.createElement('div', { className: 'bp-count' }, String(item.count)) : null,
         item.fav ? React.createElement('div', { className: 'bp-fav' }, '★') : null,
+        st.activeItem === item.id ? React.createElement('div', { className: 'bp-selmark' }, '✓') : null,
         // F7 悬停快速操作条：使用 / 复制 / 发送
         hovered ? React.createElement('div', { className: 'bp-quick', onClick: (e) => e.stopPropagation() },
           React.createElement('button', { title: '使用', onClick: (e) => { e.stopPropagation(); clearTip(); useItem(item) } }, '▶'),
@@ -1042,6 +1044,15 @@ function apply(ctx) {
         try { const raw = window.localStorage.getItem('bp-panel-pos'); return raw ? JSON.parse(raw) : null } catch (e) { /* ignore */ return null }
       })
       const ref = React.useRef(null)
+      // C2 虚拟渲染：unified 大列表按滚动窗口渲染
+      const bodyRef = React.useRef(null)
+      const [scrollTop, setScrollTop] = React.useState(0)
+      const [bodyH, setBodyH] = React.useState(600)
+      React.useEffect(() => {
+        const el = bodyRef.current
+        if (el) setBodyH(el.clientHeight || 600)
+      }, [d, s.open, s.viewMode])
+      React.useEffect(() => { setScrollTop(0) }, [s.search, s.rarityFilter, s.sortMode, s.category, d])
       if (!d) return React.createElement('div', { className: 'bp-panel' }, React.createElement('div', { className: 'bp-head' }, React.createElement('span', { className: 't' }, '背包'), React.createElement('span', { className: 's' }, '加载中…')))
       const bags = d.bags.slice().sort((a, b) => a.order - b.order)
       const searching = !!(s.search || s.rarityFilter !== 'all')
@@ -1050,7 +1061,10 @@ function apply(ctx) {
       if (useUnified) {
         const list = filteredItems(d, s)
         const cells = []
+        const ROW_H = 84
+        const COLS = 6
         if (s.sortMode === 'type') {
+          // 类型分组模式：行高不定，不做窗口切分（分组场景通常数量可控）
           TYPE_ORDER.forEach((t) => {
             const group = list.filter((i) => i.type === t)
             if (!group.length) return
@@ -1061,7 +1075,17 @@ function apply(ctx) {
             group.forEach((it) => cells.push(React.createElement(ItemCell, { key: 'u' + it.id, item: it, bagId: it.bagId, slot: it.slot, noDrop: true })))
           })
         } else {
-          list.forEach((it) => cells.push(React.createElement(ItemCell, { key: 'u' + it.id, item: it, bagId: it.bagId, slot: it.slot, noDrop: true })))
+          // C2：flat 模式按滚动窗口虚拟渲染
+          const totalRows = Math.ceil(list.length / COLS)
+          const visibleRows = Math.ceil(bodyH / ROW_H) + 3
+          const startRow = Math.max(0, Math.floor(scrollTop / ROW_H))
+          const startIdx = startRow * COLS
+          const endIdx = Math.min(list.length, (startRow + visibleRows) * COLS)
+          const padTop = startRow * ROW_H
+          const padBottom = Math.max(0, (totalRows - startRow - visibleRows) * ROW_H)
+          list.slice(startIdx, endIdx).forEach((it) => cells.push(React.createElement(ItemCell, { key: 'u' + it.id, item: it, bagId: it.bagId, slot: it.slot, noDrop: true })))
+          if (padTop || padBottom) cells.unshift(React.createElement('div', { key: 'pad-top', style: { height: padTop, gridColumn: '1/-1' } }))
+          if (padBottom) cells.push(React.createElement('div', { key: 'pad-bottom', style: { height: padBottom, gridColumn: '1/-1' } }))
         }
         cells.push(React.createElement('div', { key: 'addrow', className: 'bp-addrow', onClick: () => patch({ modal: { kind: 'add' } }) }, '＋ 添加物品'))
         body = list.length || cells.length > 1
@@ -1138,7 +1162,7 @@ function apply(ctx) {
         ),
         React.createElement('div', { className: 'bp-main' },
           React.createElement(Sidebar, { s: s }),
-          React.createElement('div', { className: 'bp-body' }, body),
+          React.createElement('div', { className: 'bp-body', ref: bodyRef, onScroll: (e) => setScrollTop(e.target.scrollTop) }, body),
         ),
         React.createElement('div', { className: 'bp-status' },
           React.createElement('span', null, '物品 ', React.createElement('b', null, totalCount), ' 件'),

@@ -598,7 +598,16 @@ function apply(ctx) {
     const [objectives, setObjectives] = React.useState(edit && edit.objectives.length ? edit.objectives.map((o) => ({ id: o.id, text: o.text, target: o.target, current: o.current })) : [{ id: 'o0', text: '', target: 1, current: 0 }])
     const close = () => patch({ modal: null })
     const save = () => saveQuest({ id: props.id, title: title, level: level, category: category, description: description, rewards: rewards, status: status, objectives: objectives, dueAt: fromLocalInput(due), recur: recur })
+    // D3 模板：一键预填常用任务
+    const TEMPLATES = [
+      { label: '📆 每日打卡', apply: () => { setTitle('每日打卡'); setLevel(2); setCategory('日常'); setRecur('daily'); setObjectives([{ id: 'o' + Date.now().toString(36), text: '完成今日打卡目标', target: 1, current: 0 }]); setDue('') } },
+      { label: '📝 周报总结', apply: () => { setTitle('周报总结'); setLevel(3); setCategory('日常'); setRecur('weekly'); setObjectives([{ id: 'o' + Date.now().toString(36), text: '总结本周进展', target: 1, current: 0 }]); setDue('') } },
+      { label: '⚡ 通用任务', apply: () => { setTitle(''); setLevel(1); setCategory(''); setRecur(''); setObjectives([{ id: 'o' + Date.now().toString(36), text: '', target: 1, current: 0 }]); setDue('') } },
+    ]
     return React.createElement(ModalShell, { title: edit ? '编辑任务' : '新建任务', onClose: close },
+      edit ? null : React.createElement('div', { className: 'row', style: { marginBottom: 10, flexWrap: 'wrap' } },
+        React.createElement('span', { style: { fontSize: 11, color: '#a49c8c' } }, '模板：'),
+        TEMPLATES.map((tp) => React.createElement('button', { key: tp.label, className: 'qst-btn-sm', style: { marginLeft: 4 }, onClick: tp.apply }, tp.label))),
       React.createElement('div', { className: 'qst-field' }, React.createElement('label', null, '标题'), React.createElement('input', { className: 'qst-input in', value: title, onChange: (e) => setTitle(e.target.value) })),
       React.createElement('div', { className: 'row' },
         React.createElement('select', { className: 'qst-select', value: String(level), onChange: (e) => setLevel(Number(e.target.value)) }, LEVELS.map((l) => React.createElement('option', { key: l.id, value: String(l.id) }, l.label + ' (' + l.id + '级)'))),
