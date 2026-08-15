@@ -171,16 +171,11 @@ function apply(ctx) {
       '.bp-usage-card .uc-yuan{width:56px;flex:none;text-align:right;color:#d8b558}' +
       '.bp-modal .row{display:flex;gap:8px;align-items:center;margin-bottom:8px}' +
       '.bp-modal .row .grow{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12.5px}' +
-      '.bp-loot-item{display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid #332d25;border-radius:6px;margin-bottom:4px;background:#211d17;font-size:12.5px}' +
-      '.bp-loot-item:hover{border-color:#5a5345}' +
-      '.bp-loot-item .grow{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' +
       '.bp-toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:9800;background:rgba(12,10,8,.96);border:1px solid #6f6857;color:#d8b558;padding:8px 18px;border-radius:20px;font-size:12.5px;box-shadow:0 4px 16px rgba(0,0,0,.7);pointer-events:none;max-width:80vw}' +
       '.bp-toast[data-type=success]{color:#1eff00;border-color:#2f6b2f}' +
       '.bp-toast[data-type=error]{color:#ff6b5e;border-color:#7a3a34}' +
       '.bp-composer-btn{display:inline-flex;align-items:center;justify-content:center;background:none;border:1px solid rgba(199,182,140,.35);color:#c7b68c;border-radius:6px;width:26px;height:26px;cursor:pointer;padding:0}' +
       '.bp-composer-btn:hover{border-color:#c7b68c;color:#e8e2d4}' +
-      '.bp-loot-btn{display:inline-flex;align-items:center;justify-content:center;background:linear-gradient(160deg,#312b23,#1b1712);border:1px solid #4a4338;color:#c7b68c;border-radius:8px;width:26px;height:26px;cursor:pointer;padding:0;font-size:14px;font-weight:700;font-family:inherit;box-shadow:0 2px 6px rgba(0,0,0,.45)}' +
-      '.bp-loot-btn:hover{border-color:#c7b68c;box-shadow:0 0 8px rgba(199,182,140,.35)}' +
       '.bp-media{max-width:100%;max-height:56vh;border-radius:6px;display:block}' +
       '.bp-danger{color:#ff6b5e;font-size:11px;margin-top:6px}'
     )
@@ -1016,49 +1011,6 @@ function apply(ctx) {
       )
     }
 
-    function LootModal(props) {
-      const [specs, setSpecs] = React.useState(null)
-      const [sel, setSel] = React.useState(null)
-      const [bagId, setBagId] = React.useState(getStore().activeBag)
-      React.useEffect(() => {
-        rpc('detect-many', { candidates: props.candidates || [] }).then((res) => {
-          if (res && Array.isArray(res.specs)) {
-            setSpecs(res.specs)
-            const m = {}
-            res.specs.forEach((sp, i) => { m[i] = true })
-            setSel(m)
-          } else setSpecs([])
-        })
-      }, [])
-      const close = () => patch({ modal: null })
-      const d = getStore().data
-      const add = () => {
-        const chosen = (specs || []).map((sp, i) => (sel && sel[i] ? sp : null)).filter(Boolean)
-        if (chosen.length) addItems(chosen, bagId)
-        close()
-      }
-      return React.createElement(ModalShell, { title: '拾取到背包', onClose: close },
-        specs === null ? React.createElement('div', { style: { fontSize: 12, color: '#a49c8c' } }, '识别中…')
-          : (specs.length ? React.createElement('div', null,
-            specs.map((sp, i) => {
-              const r = RARITIES[sp.rarity] || RARITIES[1]
-              return React.createElement('div', { key: i, className: 'bp-loot-item', onClick: () => { const m = Object.assign({}, sel); m[i] = !m[i]; setSel(m) } },
-                React.createElement('input', { type: 'checkbox', checked: !!sel[i], readOnly: true }),
-                Icon((TYPES[sp.type] || {}).icon || 'parchment', r.color, 14),
-                React.createElement('span', { className: 'grow', style: { color: r.color } }, sp.name),
-                React.createElement('span', { style: { fontSize: 10, color: '#a49c8c' } }, (TYPES[sp.type] || {}).label),
-              )
-            }),
-            React.createElement('div', { className: 'row', style: { marginTop: 10 } },
-              React.createElement('select', { className: 'bp-select', value: bagId || '', onChange: (e) => setBagId(e.target.value) },
-                (d ? d.bags.filter((b) => !b.vault) : []).map((b) => React.createElement('option', { key: b.id, value: b.id }, b.name))),
-              React.createElement('span', { style: { flex: 1 } }),
-              React.createElement('button', { className: 'bp-btn', style: { borderColor: '#6f6857', color: '#c7b68c' }, onClick: add }, '拾取所选'),
-            ),
-          ) : React.createElement('div', { style: { fontSize: 12, color: '#a49c8c' } }, '没有可拾取的物品')),
-      )
-    }
-
     function BagsModal(props) {
       const s = useStore()
       const d = s.data
@@ -1210,7 +1162,6 @@ function apply(ctx) {
       if (m.kind === 'edit') return React.createElement(EditModal, { itemId: m.itemId })
       if (m.kind === 'preview') return React.createElement(PreviewModal, { itemId: m.itemId })
       if (m.kind === 'destroy') return React.createElement(DestroyModal, { itemId: m.itemId })
-      if (m.kind === 'loot') return React.createElement(LootModal, { candidates: m.candidates })
       if (m.kind === 'bags') return React.createElement(BagsModal, null)
       if (m.kind === 'deltype') return React.createElement(DelTypeModal, { type: m.type })
       return null
@@ -1427,55 +1378,6 @@ function apply(ctx) {
       return null
     }
 
-    function LootAction(props) {
-      const btnRef = React.useRef(null)
-      const saveNote = (text) => {
-        const t = String(text || '').trim()
-        if (!t) { toast('未能读取这条回复的内容'); return }
-        const title = t.replace(/\s+/g, ' ').slice(0, 20)
-        addItems([{ type: 'note', name: title, payload: t, rarity: 1, extra: {} }], getStore().activeBag)
-      }
-      const domText = () => {
-        if (!btnRef.current) return ''
-        let el = btnRef.current
-        for (let i = 0; i < 7 && el; i++) {
-          el = el.parentElement
-          if (!el) continue
-          const t = el.innerText ? el.innerText.trim() : ''
-          // 跳过元数据/操作行（含 token 统计、模型、用时等），正文通常明显更长
-          if (t && t.length >= 20 && t.length <= 12000 && !/(首 ?token|用时|tok\/|编辑|复制|重新生成)/.test(t.slice(0, 200))) { return t }
-        }
-        return ''
-      }
-      const lootFrom = () => {
-        const sid = props.sessionId
-        const mid = props.messageId
-        // 1) host 从会话事件日志读取该回复的权威正文
-        if (sid && mid) {
-          rpc('read-reply', { sessionId: sid, messageId: mid }).then((res) => {
-            if (res && res.ok && res.text && res.text.trim()) { saveNote(res.text); return }
-            let t = ''
-            // 2) 快照兜底
-            try {
-              let snap = null
-              if (typeof props.useSession === 'function') snap = props.useSession()
-              const nodes = (snap && Array.isArray(snap.nodes)) ? snap.nodes : []
-              const node = nodes.find((n) => n && n.messageId === mid && n.kind === 'assistant') || null
-              if (node && Array.isArray(node.blocks)) {
-                t = node.blocks.filter((b) => b && (b.kind === 'text' || b.kind === 'reasoning')).map((b) => String(b.text || '')).join('\n').trim()
-              }
-            } catch (e) { /* ignore */ }
-            // 3) DOM 兜底
-            if (!t) t = domText()
-            saveNote(t)
-          }).catch(() => { saveNote(domText()) })
-          return
-        }
-        saveNote(domText())
-      }
-      return React.createElement('button', { ref: btnRef, className: 'bp-loot-btn', type: 'button', title: '拾取到背包（点击把这条回复存为笔记）', onClick: lootFrom }, 'G')
-    }
-
     slotsSvc.inject('shell.overlay', () => slotsSvc.register(
       { name: 'shell.overlay', id: 'backpack', order: 50, label: '背包' },
       () => React.createElement(OverlayRoot),
@@ -1484,11 +1386,6 @@ function apply(ctx) {
     slotsSvc.inject('conversation.input.left', () => slotsSvc.register(
       { name: 'conversation.input.left', id: 'backpack-composer', order: 20, label: '背包' },
       (props) => React.createElement(ComposerBridge, props),
-    ))
-
-    slotsSvc.inject('conversation.chat.assistant-actions', () => slotsSvc.register(
-      { name: 'conversation.chat.assistant-actions', id: 'backpack-loot', order: 25, label: '拾取到背包' },
-      (props) => React.createElement(LootAction, props),
     ))
 }
 
