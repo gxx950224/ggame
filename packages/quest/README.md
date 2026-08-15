@@ -2,7 +2,7 @@
 
 DeepSeek Harness 常驻插件：仿魔兽世界任务系统。按 `L` 打开任务面板，左下角卷轴按钮（背包图标左侧）快捷进入；右侧常驻任务追踪条实时显示已追踪任务的进度；任务看板支持任务维护；Agent 可经对话直接创建 / 更新 / 完成 / 推进任务。
 
-> 适用于 DSH Web profile（`dsh web`）。与 [@ggame/backpack](https://github.com/USER/ggame/tree/main/packages/backpack)（背包）并列安装互不影响。
+> 适用于 DSH Web profile（`dsh web`）。与 [@ggame/backpack](https://github.com/gxx950224/ggame/tree/main/packages/backpack)（背包）并列安装互不影响。
 
 ## 特性
 

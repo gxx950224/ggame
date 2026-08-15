@@ -5,10 +5,10 @@
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "https://github.com/USER/ggame.git",
+    "url": "https://github.com/gxx950224/ggame.git",
     "directory": "packages/backpack"
   },
-  "homepage": "https://github.com/USER/ggame/tree/main/packages/backpack",
+  "homepage": "https://github.com/gxx950224/ggame/tree/main/packages/backpack",
   "main": "lib/index.js",
   "exports": {
     ".": "./lib/index.js",
