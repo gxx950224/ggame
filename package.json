@@ -14,7 +14,8 @@
   },
   "dependencies": {
     "@ggame/backpack": "workspace:*",
-    "@ggame/quest": "workspace:*"
+    "@ggame/quest": "workspace:*",
+    "@ggame/skin": "workspace:*"
   },
   "scripts": {
     "build": "node packages/backpack/scripts/build-client.mjs && node packages/quest/scripts/build-client.mjs",
