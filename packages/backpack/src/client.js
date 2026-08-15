@@ -151,6 +151,16 @@ function apply(ctx) {
       '.bp-md img{max-width:100%;border-radius:6px}' +
       '.bp-link-box{background:#0f0c0a;border:1px solid #332d25;border-radius:6px;padding:12px;word-break:break-all}' +
       '.bp-link-box a{color:#6ab0ff;font-size:14px;text-decoration:underline}' +
+      '.bp-usage-card{position:absolute;bottom:calc(100% + 10px);right:0;width:300px;background:rgba(16,13,10,.98);border:1px solid #4a4338;border-radius:10px;box-shadow:0 10px 32px rgba(0,0,0,.75);padding:10px 12px;z-index:9800;font-size:11px;color:#d6d2c8;animation:bp-menu-in .12s ease}' +
+      '.bp-usage-card .uc-head{font-size:12px;font-weight:700;color:#c7b68c;margin-bottom:6px;border-bottom:1px solid #332d25;padding-bottom:5px}' +
+      '.bp-usage-card .uc-sec{font-size:10.5px;color:#a49c8c;margin:7px 0 3px}' +
+      '.bp-usage-card .uc-line{display:flex;align-items:center;gap:6px;margin:2px 0}' +
+      '.bp-usage-card .uc-date{width:34px;flex:none;color:#9a9386;text-align:right}' +
+      '.bp-usage-card .uc-name{width:88px;flex:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#9a9386}' +
+      '.bp-usage-card .uc-bar{flex:1;height:7px;background:#0f0c0a;border:1px solid #332d25;border-radius:3px;overflow:hidden;display:block}' +
+      '.bp-usage-card .uc-bar i{display:block;height:100%;background:#c7b68c;border-radius:2px}' +
+      '.bp-usage-card .uc-bar.blue i{background:#0070dd}' +
+      '.bp-usage-card .uc-yuan{width:56px;flex:none;text-align:right;color:#d8b558}' +
       '.bp-modal .row{display:flex;gap:8px;align-items:center;margin-bottom:8px}' +
       '.bp-modal .row .grow{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12.5px}' +
       '.bp-loot-item{display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid #332d25;border-radius:6px;margin-bottom:4px;background:#211d17;font-size:12.5px}' +
@@ -168,7 +178,7 @@ function apply(ctx) {
     )
     ctx.effect(() => disposeCss)
 
-    let store = { open: false, data: null, activeBag: null, viewMode: 'unified', category: 'all', search: '', rarityFilter: 'all', sortMode: 'type', tooltip: null, menu: null, modal: null, toast: null, insert: null, collapsedBags: {}, money: null, usage: null, loading: true, dragOver: null, savedAt: 0, saveFailed: false, sel: [] }
+    let store = { open: false, data: null, activeBag: null, viewMode: 'unified', category: 'all', search: '', rarityFilter: 'all', sortMode: 'type', tooltip: null, menu: null, modal: null, toast: null, insert: null, collapsedBags: {}, money: null, usage: null, loading: true, dragOver: null, savedAt: 0, saveFailed: false, sel: [], usageOpen: false }
     let tipTimer = null
     const listeners = new Set()
     function patch(p) { store = Object.assign({}, store, p); listeners.forEach((f) => { try { f() } catch (e) {} }) }
@@ -1103,11 +1113,10 @@ function apply(ctx) {
       )
     }
 
-    // B3 费用明细：近 7 天每天总花费（元）+ 每个模型花费（元）
-    function UsageModal() {
+    // B3 费用明细悬浮卡片：金额上方小卡片，鼠标移开即关闭
+    function UsageCard() {
       const [u, setU] = React.useState(null)
       React.useEffect(() => { rpc('get-usage').then((ur) => { if (ur && ur.ok) setU(ur) }) }, [])
-      const close = () => patch({ modal: null })
       const days = (u && Array.isArray(u.days)) ? u.days : []
       const dayMax = Math.max(1, ...days.map((d) => d.costCu || 0))
       const models = (u && u.models) || {}
@@ -1115,25 +1124,20 @@ function apply(ctx) {
       const modelMax = Math.max(1, ...modelList.map((m) => m.costCu))
       const totalCu = modelList.reduce((s, m) => s + m.costCu, 0)
       const yuan = (cu) => (cu / 10000).toFixed(2)
-      return React.createElement(ModalShell, { title: '费用明细', onClose: close },
-        React.createElement('div', { style: { fontSize: 12, color: '#c7b68c', marginBottom: 8 } }, '累计花费 ' + yuan(totalCu) + ' 元'),
-        React.createElement('div', { style: { fontSize: 12, color: '#a49c8c', marginBottom: 6 } }, '近 7 天每天总花费（元）：'),
-        days.length === 0 ? React.createElement('div', { style: { color: '#7a7262' } }, '暂无明细') : days.map((d) => {
-          const v = d.costCu || 0
-          return React.createElement('div', { key: d.date, style: { display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 } },
-            React.createElement('span', { style: { width: 88, fontSize: 11, color: '#9a9386' } }, d.date),
-            React.createElement('div', { style: { flex: 1, height: 14, background: '#0f0c0a', borderRadius: 3, overflow: 'hidden' } },
-              React.createElement('div', { style: { width: Math.min(100, Math.round(v / dayMax * 100)) + '%', height: '100%', background: '#c7b68c' } })),
-            React.createElement('span', { style: { width: 70, fontSize: 11, textAlign: 'right', color: '#d8b558' } }, yuan(v) + ' 元'))
-        }),
-        React.createElement('div', { style: { fontSize: 12, color: '#a49c8c', margin: '10px 0 6px' } }, '每个模型花费（元）：'),
-        modelList.length === 0 ? React.createElement('div', { style: { color: '#7a7262' } }, '暂无模型数据') : modelList.map((m) =>
-          React.createElement('div', { key: m.name, style: { display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 } },
-            React.createElement('span', { style: { width: 150, fontSize: 11, color: '#9a9386', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, m.name),
-            React.createElement('div', { style: { flex: 1, height: 14, background: '#0f0c0a', borderRadius: 3, overflow: 'hidden' } },
-              React.createElement('div', { style: { width: Math.min(100, Math.round(m.costCu / modelMax * 100)) + '%', height: '100%', background: '#0070dd' } })),
-            React.createElement('span', { style: { width: 80, fontSize: 11, textAlign: 'right', color: '#b9b4a8' } }, yuan(m.costCu) + ' 元'))
-        ),
+      return React.createElement('div', { className: 'bp-usage-card' },
+        React.createElement('div', { className: 'uc-head' }, '费用明细 · 累计 ' + yuan(totalCu) + ' 元'),
+        React.createElement('div', { className: 'uc-sec' }, '近 7 天每天总花费'),
+        days.length === 0 ? React.createElement('div', { className: 'uc-line' }, '暂无明细')
+          : days.map((d) => React.createElement('div', { key: d.date, className: 'uc-line' },
+            React.createElement('span', { className: 'uc-date' }, d.date.slice(5)),
+            React.createElement('span', { className: 'uc-bar' }, React.createElement('i', { style: { width: Math.max(2, Math.round((d.costCu || 0) / dayMax * 100)) + '%' } })),
+            React.createElement('span', { className: 'uc-yuan' }, yuan(d.costCu || 0)))),
+        React.createElement('div', { className: 'uc-sec' }, '每个模型花费'),
+        modelList.length === 0 ? React.createElement('div', { className: 'uc-line' }, '暂无模型数据')
+          : modelList.map((m) => React.createElement('div', { key: m.name, className: 'uc-line' },
+            React.createElement('span', { className: 'uc-name' }, m.name),
+            React.createElement('span', { className: 'uc-bar blue' }, React.createElement('i', { style: { width: Math.max(2, Math.round(m.costCu / modelMax * 100)) + '%' } })),
+            React.createElement('span', { className: 'uc-yuan' }, yuan(m.costCu)))),
       )
     }
 
@@ -1147,7 +1151,6 @@ function apply(ctx) {
       if (m.kind === 'loot') return React.createElement(LootModal, { candidates: m.candidates })
       if (m.kind === 'bags') return React.createElement(BagsModal, null)
       if (m.kind === 'deltype') return React.createElement(DelTypeModal, { type: m.type })
-      if (m.kind === 'usage') return React.createElement(UsageModal, null)
       return null
     }
 
@@ -1293,10 +1296,11 @@ function apply(ctx) {
           s.saveFailed
             ? React.createElement('span', { style: { color: '#ff6b5e', fontSize: 12 } }, '⚠ 保存失败')
             : (s.savedAt ? React.createElement('span', { style: { color: '#a49c8c', fontSize: 12 } }, '已保存 ' + (new Date(s.savedAt).getHours() < 10 ? '0' : '') + new Date(s.savedAt).getHours() + ':' + (new Date(s.savedAt).getMinutes() < 10 ? '0' : '') + new Date(s.savedAt).getMinutes()) : null),
-          React.createElement('span', { style: { marginLeft: 'auto', display: 'flex', gap: 12, alignItems: 'center', cursor: 'pointer' }, title: '点击/悬浮打开费用明细（每个模型花费 + 近 7 天每天总花费）', onMouseEnter: () => patch({ modal: { kind: 'usage' } }) },
+          React.createElement('span', { style: { marginLeft: 'auto', position: 'relative', display: 'flex', gap: 12, alignItems: 'center', cursor: 'pointer' }, title: '悬浮查看费用明细（每个模型花费 + 近 7 天每天总花费），移开自动关闭', onMouseEnter: () => patch({ usageOpen: true }), onMouseLeave: () => patch({ usageOpen: false }) },
             React.createElement('span', { style: { display: 'flex', alignItems: 'center', gap: 4 } }, React.createElement('b', null, String(money.gold)), React.createElement('img', { src: '/_dsh/backpack/media?p=' + enc(TYPE_ICON_DIR + '/金币.png'), style: { width: 16, height: 16 } })),
             React.createElement('span', { style: { display: 'flex', alignItems: 'center', gap: 4 } }, React.createElement('b', null, String(money.silver)), React.createElement('img', { src: '/_dsh/backpack/media?p=' + enc(TYPE_ICON_DIR + '/银币.png'), style: { width: 16, height: 16 } })),
             React.createElement('span', { style: { display: 'flex', alignItems: 'center', gap: 4 } }, React.createElement('b', null, String(money.copper)), React.createElement('img', { src: '/_dsh/backpack/media?p=' + enc(TYPE_ICON_DIR + '/铜币.png'), style: { width: 16, height: 16 } })),
+            s.usageOpen ? React.createElement(UsageCard, null) : null,
           ),
         ),
       )
