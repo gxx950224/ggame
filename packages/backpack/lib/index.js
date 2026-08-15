@@ -20,9 +20,8 @@ export const name = '@ggame/backpack'
 
 export const BACKPACK_SETTINGS_NAMESPACE = settingsNamespace('backpack')
 
-const TYPE_SET = ['link', 'prompt', 'note', 'skill', 'file', 'image', 'video', 'plugin', 'command', 'other']
+const TYPE_SET = ['link', 'prompt', 'note', 'skill', 'file', 'image', 'plugin', 'command', 'other']
 const IMAGE_EXT = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp', '.ico']
-const VIDEO_EXT = ['.mp4', '.webm', '.mov', '.mkv', '.avi', '.m4v']
 const TEXT_EXT = ['.txt', '.md', '.markdown', '.json', '.js', '.mjs', '.cjs', '.ts', '.tsx', '.jsx', '.yml', '.yaml', '.toml', '.csv', '.html', '.htm', '.css', '.xml', '.log', '.ini', '.conf', '.sh', '.py', '.java', '.go', '.rs', '.c', '.cpp', '.h', '.sql', '.vue', '.svelte']
 const PACKAGE_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const TYPE_ICON_DIR = join(PACKAGE_ROOT, 'icons')
@@ -49,6 +48,8 @@ export const Config = z.object({
     miss: z.number(),
     out: z.number(),
   })).default({}),
+  /** 皮肤：DSH 网页背景图（本地图片路径或 http(s) URL，留空则用默认深色背景）。 */
+  backgroundImage: z.string().default(''),
 }).default({})
 
 export function resolveConfig(config = {}) {
@@ -137,7 +138,7 @@ export async function apply(ctx, config = {}) {
         { id: 'bag-vault', name: '虚空仓库', cols: 8, rows: 36, order: 1, vault: true, fixed: true },
       ],
       items: [
-        { id: uid(), bagId: 'bag-main', slot: 0, type: 'note', name: '新手卷轴', rarity: 2, payload: '# 背包使用指南\n\n欢迎来到 **ggame 背包**！这份指南会把每个操作讲清楚。\n\n## 一、开合与面板\n\n- 打开 / 关闭：按键盘 **B 键**，或点击右下角的 🎒 背包按钮；按 **Esc** 也可关闭。\n- 面板可以按住**顶部标题栏**拖动，松手后位置会被记住。\n\n## 二、添加物品（三种方式）\n\n1. **粘贴内容**：打开背包 → 工具栏「＋ 添加物品」→ 把内容粘贴到输入框 → 自动识别类型 → 点「放入背包」。\n2. **选择本地文件**：添加弹窗里点「📁 选择本地文件」→ 选中的文件会填进面板（名字自动等于文件名）→ 点「放入背包」。\n3. **拖入文件**：把文件直接从资源管理器拖进背包面板。\n\n## 三、查看与使用（双击 = 使用）\n\n**双击物品** = 执行该物品的默认动作：\n\n| 物品类型 | 双击（使用）会做什么 |\n| --- | --- |\n| 链接 | 在浏览器新标签页打开该网址 |\n| 提示词 / 笔记 | 把内容填入对话输入框，按 Enter 发给 Agent |\n| 技能 | 填入「请加载并使用技能：xxx」并发给 Agent |\n| 插件 | 填入「@插件ID 请查看并激活」并发给 Agent |\n| 文件 | 打开预览弹窗（可查看内容 / 复制路径） |\n| 图片 | 打开大图预览 |\n| 视频 | 打开播放器预览 |\n| 命令 | 填入对话执行（危险，执行前请确认内容） |\n\n**右键物品** = 打开菜单：查看（按内容渲染：链接卡片 / Markdown / HTML / 图片 / 视频 / 纯文本）、发送到对话、复制、固定、编辑、移动、摧毁；本地路径物品还有「打开文件所在位置」。\n\n## 四、费用记账\n\n- 面板底部的 **金币 / 银币 / 铜币** = 元 / 角 / 分，来自全会话 token 费用（DeepSeek 官方动态定价 + 峰谷计价）。\n- **鼠标悬浮金额**：金额上方弹出卡片，显示近 7 天每天总花费与每个模型花费，鼠标移开自动关闭。\n\n## 五、Agent 工具\n\n- `backpack_add`：让 Agent 把内容放入背包\n- `backpack_money`：记录费用\n- `backpack_search`：Agent 检索背包\n\n祝冒险愉快！', flavor: '阅读后绑定', count: 1, createdAt: now, lastUsed: 0, useCount: 0, extra: {}, icon: '' },
+        { id: uid(), bagId: 'bag-main', slot: 0, type: 'note', name: '新手卷轴', rarity: 2, payload: '# 背包使用指南\n\n欢迎来到 **ggame 背包**！这份指南会把每个操作讲清楚。\n\n## 一、开合与面板\n\n- 打开 / 关闭：按键盘 **B 键**，或点击右下角的 🎒 背包按钮；按 **Esc** 也可关闭。\n- 面板可以按住**顶部标题栏**拖动，松手后位置会被记住。\n\n## 二、添加物品（三种方式）\n\n1. **粘贴内容**：打开背包 → 工具栏「＋ 添加物品」→ 把内容粘贴到输入框 → 自动识别类型 → 点「放入背包」。\n2. **选择本地文件**：添加弹窗里点「📁 选择本地文件」→ 选中的文件会填进面板（名字自动等于文件名）→ 点「放入背包」。\n3. **拖入文件**：把文件直接从资源管理器拖进背包面板。\n\n## 三、查看与使用（双击 = 使用）\n\n**双击物品** = 执行该物品的默认动作：\n\n| 物品类型 | 双击（使用）会做什么 |\n| --- | --- |\n| 链接 | 在浏览器新标签页打开该网址 |\n| 提示词 / 笔记 | 把内容填入对话输入框，按 Enter 发给 Agent |\n| 技能 | 填入「请加载并使用技能：xxx」并发给 Agent |\n| 插件 | 填入「@插件ID 请查看并激活」并发给 Agent |\n| 文件 | 打开预览弹窗（可查看内容 / 复制路径） |\n| 图片 | 打开大图预览 |\n| 命令 | 填入对话执行（危险，执行前请确认内容） |\n\n**右键物品** = 打开菜单：查看（按内容渲染：链接卡片 / Markdown / HTML / 图片 / 视频 / 纯文本）、发送到对话、复制、固定、编辑、移动、摧毁；本地路径物品还有「打开文件所在位置」。\n\n## 四、费用记账\n\n- 面板底部的 **金币 / 银币 / 铜币** = 元 / 角 / 分，来自全会话 token 费用（DeepSeek 官方动态定价 + 峰谷计价）。\n- **鼠标悬浮金额**：金额上方弹出卡片，显示近 7 天每天总花费与每个模型花费，鼠标移开自动关闭。\n\n## 五、Agent 工具\n\n- `backpack_add`：让 Agent 把内容放入背包\n- `backpack_money`：记录费用\n- `backpack_search`：Agent 检索背包\n\n祝冒险愉快！', flavor: '阅读后绑定', count: 1, createdAt: now, lastUsed: 0, useCount: 0, extra: {}, icon: '' },
         { id: uid(), bagId: 'bag-main', slot: 1, type: 'link', name: 'DeepSeek GitHub', rarity: 1, payload: 'https://github.com/deepseek-ai', flavor: '艾泽拉斯通讯录', count: 1, createdAt: now, lastUsed: 0, useCount: 0, extra: {}, icon: '' },
         { id: uid(), bagId: 'bag-main', slot: 2, type: 'skill', name: 'cordis-plugin-development', rarity: 3, payload: 'cordis-plugin-development', flavor: '插件开发技能书', count: 1, createdAt: now, lastUsed: 0, useCount: 0, extra: {}, icon: '' },
         { id: uid(), bagId: 'bag-main', slot: 3, type: 'prompt', name: '代码审查大师', rarity: 2, payload: '你是一位资深代码审查专家。请审查以下代码，指出潜在 bug、性能问题与安全隐患，并给出改进建议。', flavor: '老练的匠人之魂', count: 1, createdAt: now, lastUsed: 0, useCount: 0, extra: {}, icon: '' },
@@ -411,6 +412,9 @@ export async function apply(ctx, config = {}) {
       const entries = await fsp.readdir(TYPE_ICON_DIR)
       entries.forEach((e) => { if (/\.png$/i.test(e)) mediaAllowed.add(normPath(join(TYPE_ICON_DIR, e))) })
     } catch (e) { /* icons dir unavailable */ }
+    // 皮肤背景图路径放行（本地路径）
+    const bg = String(resolveConfig(settings.get()).backgroundImage || '').trim()
+    if (/^(?:[A-Za-z]:[\\/]|~[\\/]|[\\/]|\.{1,2}[\\/])/.test(bg)) mediaAllowed.add(normPath(bg))
     if (!data) return
     data.items.forEach((it) => {
       const p = String(it.payload || '')
@@ -560,7 +564,6 @@ export async function apply(ctx, config = {}) {
         const ext = extOf(text)
         const size = typeof st.size === 'number' ? st.size : 0
         if (IMAGE_EXT.indexOf(ext) >= 0) return { type: 'image', name: base, rarity: 3, payload: text, extra: { size: size } }
-        if (VIDEO_EXT.indexOf(ext) >= 0) return { type: 'video', name: base, rarity: 4, payload: text, extra: { size: size } }
         const isText = TEXT_EXT.indexOf(ext) >= 0
         return { type: 'file', name: base, rarity: isText ? 2 : 1, payload: text, extra: { size: size, text: !!isText } }
       } catch (e) { /* missing */ }
@@ -589,6 +592,11 @@ export async function apply(ctx, config = {}) {
   // ── Web API：浏览器客户端通过 fetch 调用（与动态版 host.call 一一对应） ──
   async function dispatch(method, args) {
     switch (method) {
+      case 'get-config': {
+        // 皮肤等客户端需要读取的配置
+        const cfg = resolveConfig(settings.get())
+        return { ok: true, config: { backgroundImage: String(cfg.backgroundImage || '') } }
+      }
       case 'get-state': {
         await ensureLoaded()
         return { ok: true, data: data, diag: diag, scan: scanDiag }

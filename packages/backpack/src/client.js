@@ -17,7 +17,6 @@ const TYPES = {
   skill: { label: '技能', icon: 'book', rarity: 3, use: '发送到对话并触发技能' },
   file: { label: '文件', icon: 'file', rarity: 2, use: '预览 / 复制路径' },
   image: { label: '图片', icon: 'frame', rarity: 3, use: '预览大图' },
-  video: { label: '视频', icon: 'film', rarity: 4, use: '播放预览' },
   plugin: { label: '插件', icon: 'rune', rarity: 4, use: '发送到对话控制插件' },
   command: { label: '命令', icon: 'hammer', rarity: 5, use: '发送到对话执行（危险）' },
   other: { label: '其他', icon: 'box', rarity: 1, use: '查看内容' },
@@ -30,7 +29,7 @@ const RARITIES = [
   { id: 4, label: '史诗', color: '#a335ee' },
   { id: 5, label: '传说', color: '#ff8000' },
 ]
-const TYPE_ORDER = ['link', 'note', 'file', 'prompt', 'skill', 'image', 'video', 'plugin', 'command', 'other']
+const TYPE_ORDER = ['link', 'note', 'file', 'prompt', 'skill', 'image', 'plugin', 'command', 'other']
 const TYPE_ICONS = {
   link: '金色铁链.png',
   prompt: '魔法卷轴.png',
@@ -38,7 +37,6 @@ const TYPE_ICONS = {
   skill: '斧头技能.png',
   file: '蓝色矿石.png',
   image: '相框.png',
-  video: '视频.png',
   plugin: '紫色符文石.png',
   command: '雷电技能.png',
   other: '金币.png',
@@ -184,6 +182,22 @@ function apply(ctx) {
       return s
     }
     const rpc = (method, args) => fetch('/_dsh/backpack/api', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ method: method, args: args || null }), credentials: 'same-origin' }).then((r) => r.json()).catch((e) => ({ ok: false, error: String((e && e.message) || e) }))
+    // 皮肤：把配置的背景图应用到 DSH 网页背景（本地路径经媒体路由，URL 直用）
+    function applySkin() {
+      try {
+        rpc('get-config').then((res) => {
+          try {
+            const bg = res && res.ok ? String((res.config && res.config.backgroundImage) || '').trim() : ''
+            if (!bg || !document || !document.body) return
+            const src = /^https?:\/\//i.test(bg) ? bg : '/_dsh/backpack/media?p=' + enc(bg)
+            document.body.style.background = 'rgba(8,6,4,.72) url("' + src + '") no-repeat center/cover fixed'
+            document.body.style.backgroundSize = 'cover'
+            document.body.style.backgroundAttachment = 'fixed'
+          } catch (e) { /* ignore */ }
+        })
+      } catch (e) { /* ignore */ }
+    }
+    applySkin()
     function toast(text, type) { patch({ toast: { text: text, type: type || 'info', seq: Date.now() } }) }
     const enc = (s) => (typeof encodeURIComponent === 'function') ? encodeURIComponent(s) : String(s)
     const clamp = (v, lo, hi) => { const n = Math.floor(Number(v)); return isFinite(n) ? Math.max(lo, Math.min(hi, n)) : lo }
@@ -398,7 +412,7 @@ function apply(ctx) {
         case 'plugin':
           sendToComposer('@' + p.replace(/^@/, '') + ' 请帮我查看并激活这个插件')
           break
-        case 'file': case 'image': case 'video':
+        case 'file': case 'image':
           patch({ modal: { kind: 'preview', itemId: item.id } })
           break
         default:
@@ -914,8 +928,6 @@ function apply(ctx) {
       if (item.type === 'image') {
         const src = p.indexOf('data:') === 0 ? p : '/_dsh/backpack/media?p=' + enc(p)
         body = React.createElement('img', { className: 'bp-media', src: src, onError: () => setErr('图片加载失败') })
-      } else if (item.type === 'video') {
-        body = React.createElement('video', { className: 'bp-media', src: '/_dsh/backpack/media?p=' + enc(p), controls: true, autoPlay: false })
       } else if (isPath(p) && err) {
         body = React.createElement('div', null,
           React.createElement('div', { className: 'bp-pre' }, p),
