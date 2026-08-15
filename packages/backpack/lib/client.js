@@ -26,9 +26,7 @@ const TYPES = {
   file: { label: '文件', icon: 'file', rarity: 2, use: '预览 / 复制路径' },
   image: { label: '图片', icon: 'frame', rarity: 3, use: '预览大图' },
   video: { label: '视频', icon: 'film', rarity: 4, use: '播放预览' },
-  mcp: { label: 'MCP 配置', icon: 'gear', rarity: 4, use: '装备：召唤 Agent 接入配置' },
   plugin: { label: '插件', icon: 'rune', rarity: 4, use: '发送到对话控制插件' },
-  bundle: { label: '组合包', icon: 'chest', rarity: 5, use: '解包到当前袋子' },
   command: { label: '命令', icon: 'hammer', rarity: 5, use: '发送到对话执行（危险）' },
   other: { label: '其他', icon: 'box', rarity: 1, use: '查看内容' },
 }
@@ -40,7 +38,7 @@ const RARITIES = [
   { id: 4, label: '史诗', color: '#a335ee' },
   { id: 5, label: '传说', color: '#ff8000' },
 ]
-const TYPE_ORDER = ['link', 'note', 'file', 'prompt', 'skill', 'image', 'video', 'mcp', 'plugin', 'bundle', 'command', 'other']
+const TYPE_ORDER = ['link', 'note', 'file', 'prompt', 'skill', 'image', 'video', 'plugin', 'command', 'other']
 const TYPE_ICONS = {
   link: '金色铁链.png',
   prompt: '魔法卷轴.png',
@@ -49,9 +47,7 @@ const TYPE_ICONS = {
   file: '蓝色矿石.png',
   image: '相框.png',
   video: '视频.png',
-  mcp: 'MCP.png',
   plugin: '紫色符文石.png',
-  bundle: '金色宝箱.png',
   command: '雷电技能.png',
   other: '金币.png',
 }
@@ -407,22 +403,11 @@ function apply(ctx) {
         case 'skill':
           sendToComposer('请加载并使用技能：' + p)
           break
-        case 'mcp':
-          sendToComposer('请帮我将以下 MCP 配置接入当前会话（可参考 editing-cordis-compositions 技能装配）：\n```json\n' + p + '\n```')
-          break
         case 'plugin':
           sendToComposer('@' + p.replace(/^@/, '') + ' 请帮我查看并激活这个插件')
           break
         case 'file': case 'image': case 'video':
           patch({ modal: { kind: 'preview', itemId: item.id } })
-          break
-        case 'bundle':
-          try {
-            const specs = JSON.parse(p)
-            if (!Array.isArray(specs) || !specs.length) { toast('组合包为空'); break }
-            addItems(specs.map((sp) => ({ type: sp.type || 'note', name: sp.name, payload: String(sp.payload || ''), rarity: sp.rarity, flavor: sp.flavor })), getStore().activeBag)
-            toast('组合包已解包')
-          } catch (e) { toast('组合包解析失败') }
           break
         default:
           toast('该物品没有默认动作，试试右键菜单')
@@ -1325,10 +1310,6 @@ function apply(ctx) {
         React.createElement('div', { className: 'bp-status' },
           React.createElement('span', null, '物品 ', React.createElement('b', null, totalCount), ' 件'),
           React.createElement('span', null, '背包 ', React.createElement('b', null, bags.length), ' 个'),
-          // F2 保存指示
-          s.saveFailed
-            ? React.createElement('span', { style: { color: '#ff6b5e', fontSize: 12 } }, '⚠ 保存失败')
-            : (s.savedAt ? React.createElement('span', { style: { color: '#a49c8c', fontSize: 12 } }, '已保存 ' + (new Date(s.savedAt).getHours() < 10 ? '0' : '') + new Date(s.savedAt).getHours() + ':' + (new Date(s.savedAt).getMinutes() < 10 ? '0' : '') + new Date(s.savedAt).getMinutes()) : null),
           React.createElement('span', { style: { marginLeft: 'auto', position: 'relative', display: 'flex', gap: 12, alignItems: 'center', cursor: 'pointer' }, title: '悬浮查看费用明细（每个模型花费 + 近 7 天每天总花费），移开自动关闭', onMouseEnter: () => patch({ usageOpen: true }), onMouseLeave: () => patch({ usageOpen: false }) },
             React.createElement('span', { style: { display: 'flex', alignItems: 'center', gap: 4 } }, React.createElement('b', null, String(money.gold)), React.createElement('img', { src: '/_dsh/backpack/media?p=' + enc(TYPE_ICON_DIR + '/金币.png'), style: { width: 16, height: 16 } })),
             React.createElement('span', { style: { display: 'flex', alignItems: 'center', gap: 4 } }, React.createElement('b', null, String(money.silver)), React.createElement('img', { src: '/_dsh/backpack/media?p=' + enc(TYPE_ICON_DIR + '/银币.png'), style: { width: 16, height: 16 } })),

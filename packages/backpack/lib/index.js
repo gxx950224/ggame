@@ -20,7 +20,7 @@ export const name = '@ggame/backpack'
 
 export const BACKPACK_SETTINGS_NAMESPACE = settingsNamespace('backpack')
 
-const TYPE_SET = ['link', 'prompt', 'note', 'skill', 'file', 'image', 'video', 'mcp', 'plugin', 'bundle', 'command', 'other']
+const TYPE_SET = ['link', 'prompt', 'note', 'skill', 'file', 'image', 'video', 'plugin', 'command', 'other']
 const IMAGE_EXT = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp', '.ico']
 const VIDEO_EXT = ['.mp4', '.webm', '.mov', '.mkv', '.avi', '.m4v']
 const TEXT_EXT = ['.txt', '.md', '.markdown', '.json', '.js', '.mjs', '.cjs', '.ts', '.tsx', '.jsx', '.yml', '.yaml', '.toml', '.csv', '.html', '.htm', '.css', '.xml', '.log', '.ini', '.conf', '.sh', '.py', '.java', '.go', '.rs', '.c', '.cpp', '.h', '.sql', '.vue', '.svelte']
@@ -550,14 +550,6 @@ export async function apply(ctx, config = {}) {
     if (text.charAt(0) === '{' || text.charAt(0) === '[') {
       try {
         const obj = JSON.parse(text)
-        if (obj && typeof obj === 'object' && !Array.isArray(obj) && obj.mcpServers && typeof obj.mcpServers === 'object') {
-          const keys = Object.keys(obj.mcpServers)
-          const nm = keys.length ? String(keys[0]) : 'mcp'
-          return { type: 'mcp', name: nm + ' (MCP)', rarity: 4, payload: text, extra: {} }
-        }
-        if (Array.isArray(obj) && obj.length && obj.every((o) => o && typeof o === 'object' && typeof o.name === 'string' && 'payload' in o)) {
-          return { type: 'bundle', name: '组合包 (' + obj.length + ' 件)', rarity: 5, payload: text, extra: {} }
-        }
         return { type: 'note', name: 'JSON 数据', rarity: 1, payload: text, extra: {} }
       } catch (e) { /* not json */ }
     }
