@@ -1421,33 +1421,49 @@ function apply(ctx) {
 
     function LootAction(props) {
       const btnRef = React.useRef(null)
-      const lootFrom = () => {
-        // 点击 ⚡「拾取到背包」= 直接把这条 AI 回复保存为笔记（不做任何可拾取判断）
-        let text = ''
-        // 1) 优先从会话快照提取该消息的文本块
-        try {
-          let snap = null
-          if (typeof props.useSession === 'function') snap = props.useSession()
-          const mid = props.messageId
-          const nodes = (snap && Array.isArray(snap.nodes)) ? snap.nodes : []
-          const node = nodes.find((n) => n && n.messageId === mid && n.kind === 'assistant') || null
-          if (node && Array.isArray(node.blocks)) {
-            text = node.blocks.filter((b) => b && (b.kind === 'text' || b.kind === 'reasoning')).map((b) => String(b.text || '')).join('\n').trim()
-          }
-        } catch (e) { /* fallthrough to DOM */ }
-        // 2) 快照拿不到时，从按钮所在消息容器直接读取渲染文本（所见即所得）
-        if (!text && btnRef.current) {
-          let el = btnRef.current
-          for (let i = 0; i < 7 && el; i++) {
-            el = el.parentElement
-            if (!el) continue
-            const t = el.innerText ? el.innerText.trim() : ''
-            if (t && t.length >= 20 && t.length <= 12000) { text = t; break }
-          }
+      const saveNote = (text) => {
+        const t = String(text || '').trim()
+        if (!t) { toast('未能读取这条回复的内容'); return }
+        const title = t.replace(/\s+/g, ' ').slice(0, 20)
+        addItems([{ type: 'note', name: title, payload: t, rarity: 1, extra: {} }], getStore().activeBag)
+      }
+      const domText = () => {
+        if (!btnRef.current) return ''
+        let el = btnRef.current
+        for (let i = 0; i < 7 && el; i++) {
+          el = el.parentElement
+          if (!el) continue
+          const t = el.innerText ? el.innerText.trim() : ''
+          // 跳过元数据/操作行（含 token 统计、模型、用时等），正文通常明显更长
+          if (t && t.length >= 20 && t.length <= 12000 && !/(首 ?token|用时|tok\/|编辑|复制|重新生成)/.test(t.slice(0, 200))) { return t }
         }
-        if (!text.trim()) { toast('未能读取这条回复的内容'); return }
-        const title = text.replace(/\s+/g, ' ').slice(0, 20)
-        addItems([{ type: 'note', name: title, payload: text, rarity: 1, extra: {} }], getStore().activeBag)
+        return ''
+      }
+      const lootFrom = () => {
+        const sid = props.sessionId
+        const mid = props.messageId
+        // 1) host 从会话事件日志读取该回复的权威正文
+        if (sid && mid) {
+          rpc('read-reply', { sessionId: sid, messageId: mid }).then((res) => {
+            if (res && res.ok && res.text && res.text.trim()) { saveNote(res.text); return }
+            let t = ''
+            // 2) 快照兜底
+            try {
+              let snap = null
+              if (typeof props.useSession === 'function') snap = props.useSession()
+              const nodes = (snap && Array.isArray(snap.nodes)) ? snap.nodes : []
+              const node = nodes.find((n) => n && n.messageId === mid && n.kind === 'assistant') || null
+              if (node && Array.isArray(node.blocks)) {
+                t = node.blocks.filter((b) => b && (b.kind === 'text' || b.kind === 'reasoning')).map((b) => String(b.text || '')).join('\n').trim()
+              }
+            } catch (e) { /* ignore */ }
+            // 3) DOM 兜底
+            if (!t) t = domText()
+            saveNote(t)
+          }).catch(() => { saveNote(domText()) })
+          return
+        }
+        saveNote(domText())
       }
       return React.createElement('button', { ref: btnRef, className: 'bp-loot-btn', type: 'button', title: '拾取到背包（点击把这条回复存为笔记）', onClick: lootFrom }, 'G')
     }

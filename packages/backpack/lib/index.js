@@ -659,6 +659,29 @@ export async function apply(ctx, config = {}) {
       }
       case 'detect':
         return detect(args && args.text)
+      case 'read-reply': {
+        // 从会话事件日志读取指定 assistant 消息的正文（权威数据，与 UI 渲染一致）
+        const sid = String((args && args.sessionId) || '').slice(0, 128)
+        const mid = String((args && args.messageId) || '').slice(0, 128)
+        const sq = ctx.sessionQuery
+        if (!sq || typeof sq.readSession !== 'function') return { ok: false, error: 'sessionQuery 不可用' }
+        try {
+          const loaded = await sq.readSession(sid)
+          const events = loaded && Array.isArray(loaded.events) ? loaded.events : []
+          for (const ev of events) {
+            if (!ev || ev.type !== 'assistant/message' || !ev.data || typeof ev.data !== 'object') continue
+            const msg = ev.data.message
+            if (!msg || typeof msg !== 'object' || String(msg.id) !== mid) continue
+            const content = Array.isArray(msg.content) ? msg.content : []
+            const parts = content
+              .filter((b) => b && (b.type === 'text' || b.type === 'reasoning') && typeof b.text === 'string' && b.text.trim())
+              .map((b) => b.text)
+            const text = parts.join('\n').trim()
+            return { ok: true, text: text, model: (msg.source && typeof msg.source === 'object' && msg.source.model) || '' }
+          }
+          return { ok: false, error: '未找到该回复' }
+        } catch (e) { return { ok: false, error: String((e && e.message) || e) } }
+      }
       case 'detect-many': {
         const cands = Array.isArray(args && args.candidates) ? args.candidates.slice(0, 50) : []
         const out = []
