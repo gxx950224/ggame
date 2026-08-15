@@ -1,4 +1,4 @@
-﻿# DSH 背包（Backpack）
+# DSH 背包（Backpack）
 
 DeepSeek Harness 常驻插件：魔兽世界风格的物品栏 / 背包系统。右下角背包按钮展开物品栏，把 Agent 回复里的链接、提示词、文件路径一键「拾取」入库，同时自动统计**所有会话（含已归档）的 token 费用**，按 DeepSeek 官方动态定价换算成金币/银币/铜币。
 
@@ -8,11 +8,12 @@ DeepSeek Harness 常驻插件：魔兽世界风格的物品栏 / 背包系统。
 
 - 🎒 **物品栏**：右下角 FAB 展开/收起（快捷键 `B`），无限袋子、分页管理（每页 6×4），虚空仓库（超容自动收纳、不可删除）
 - 🏷️ **物品类型**：链接 / 提示词 / 笔记 / 技能 / 文件 / 图片 / 视频 / MCP 配置 / 插件 / 组合包 / 命令 / 其他，支持自定义类别（侧栏「＋添加类别」）
-- ⭐ **WoW 质感**：品质颜色（粗糙→传说）、黄字风味文字、悬浮信息卡、右键菜单（使用/发送/复制/固定/编辑/移动/摧毁）
+- ⭐ **WoW 质感**：品质颜色（粗糙→传说）、黄字风味文字、悬浮信息卡、右键菜单（查看/发送/复制/固定/编辑/移动/摧毁）
 - 🖱️ **交互**：拖拽移动物品、拖入文件生成物品、粘贴内容自动识别类型、图标库挑选
-- 💰 **费用记账**：扫描全部会话日志（`sessionQuery`，旋转批次增量），按模型 + 请求时段套用 DeepSeek 官方定价；📊 弹窗查看近 14 天每日趋势与模型占比
+- 🔎 **查看详情**：右键「查看」按内容自动渲染——链接卡片（可点击）、Markdown 富文本、HTML 沙箱页面（iframe，脚本不执行）、图片/视频/纯文本
+- 💰 **费用记账**：扫描全部会话日志（`sessionQuery`，旋转批次增量），按模型 + 请求时段套用 DeepSeek 官方定价；**悬浮金额**弹出卡片查看近 7 天每日总花费与每个模型花费（移开自动关闭）
 - 🤖 **Agent 工具**：`backpack_add` / `backpack_money` / `backpack_search`（Agent 检索背包作长期记忆库）
-- 🔍 **检索**：搜索（/ 快捷键聚焦）、品质过滤、排序、一键整理、Shift+点击批量多选、拖拽放置预览、悬停快速操作条
+- 🔍 **检索**：搜索（/ 快捷键聚焦）、品质过滤、排序、一键整理、Shift+点击批量多选、拖拽放置预览
 - 🖱️ **交互**：面板可拖拽并记住位置、Esc 关闭、toast 分色、保存状态指示、选中描边
 
 ## 环境要求
@@ -37,13 +38,13 @@ DeepSeek Harness 常驻插件：魔兽世界风格的物品栏 / 背包系统。
 
    ```json
    {
-     "dependencies": { "@dsh/backpack": "workspace:*" },
+     "dependencies": { "@ggame/backpack": "workspace:*" },
      "dsh": {
        "profile": {
          "bundles": [
            "@deepseek-ai/dsh-base",
            "@deepseek-ai/dsh-web-app",
-           "@dsh/backpack"
+           "@ggame/backpack"
          ]
        }
      }
@@ -62,19 +63,21 @@ DeepSeek Harness 常驻插件：魔兽世界风格的物品栏 / 背包系统。
 
 6. **重启 DSH**：`dsh web`。之后浏览器右下角会出现背包按钮。
 
-> 若你的 profile 已启用其他 bundle（如 vision-toolkit），把 `@dsh/backpack` 追加进 `bundles` 列表即可，互不影响。
+> 若你的 profile 已启用其他 bundle（如 vision-toolkit），把 `@ggame/backpack` 追加进 `bundles` 列表即可，互不影响。
 
 ## 使用
 
 | 操作 | 方式 |
 |---|---|
 | 开合背包 | 右下角按钮或按 `B` |
+| 查看物品 | 右键 →「查看」：链接卡片 / Markdown 富文本 / HTML 沙箱页面 / 图片 / 视频 / 纯文本（可复制、发送到对话） |
 | 使用物品 | 双击（链接打开、提示词/命令发送到输入框、技能/插件/MCP 生成调用文本、图片/文件预览） |
-| 菜单 | 右键物品：使用 / 发送到对话 / 复制 / 固定 / 编辑 / 移动到其他袋 / 移入虚空仓库 / 摧毁 |
+| 菜单 | 右键物品：查看 / 发送到对话 / 复制 / 固定 / 编辑 / 移动到其他袋 / 移入虚空仓库 / 摧毁 |
 | 移动 | 拖拽物品到其他格子或袋子标题栏 |
 | 拾取 | Agent 回复右上角的「⚡拾取」按钮，批量识别链接与路径入库 |
 | 添加 | 面板「＋物品」，粘贴内容自动识别类型；或直接把文件拖进面板 |
 | 整理 | 工具栏「整理」：按品质排序回袋，不好分类的进虚空仓库再按类别拉回 |
+| 费用明细 | 鼠标悬浮底部金额（金币/银币/铜币）→ 上方弹出卡片：近 7 天每日总花费 + 每个模型花费（移开自动关闭） |
 
 物品类型自动识别规则：`https://…`→链接；`@插件id`→插件；`{...mcpServers...}`→MCP 配置；本地路径→图片/视频/文件；命令特征→命令；长文本→提示词。
 
@@ -116,7 +119,9 @@ DeepSeek Harness 常驻插件：魔兽世界风格的物品栏 / 背包系统。
   "usageLog": [{ "ts": 1786723329685, "model": "deepseek-v4-flash", "input": 74, "hit": 5760, "output": 2348, "costCu": 49 }],
   "totalUsage": { "input": 0, "output": 0, "hit": 0 },
   "modelUsage": { "deepseek-v4-flash": { "input": 0, "output": 0, "hit": 0 } },
-  "scanState": { "__init": 1, "__priceRev": "v3-peak-20260815", "<sessionId>": 1272847 },
+  "modelCostCu": { "deepseek-v4-flash": 232236 },
+  "dayCostCu": { "2026-08-15": 331862 },
+  "scanState": { "__init": 1, "__priceRev": "v5-dayledger-20260815", "<sessionId>": 1272847 },
   "bags": [{ "id": "bag-main", "name": "主背包", "cols": 6, "rows": 4, "order": 0, "fixed": true }],
   "items": [{ "id": "it-…", "bagId": "bag-main", "slot": 0, "type": "note", "name": "…", "rarity": 2, "payload": "…", "flavor": "…", "count": 1, "createdAt": 0, "lastUsed": 0, "useCount": 0, "extra": {}, "icon": "" }]
 }

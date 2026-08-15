@@ -1,8 +1,8 @@
-﻿# DSH 任务（Quest）
+# DSH 任务（Quest）
 
 DeepSeek Harness 常驻插件：仿魔兽世界任务系统。按 `L` 打开任务面板，左下角卷轴按钮（背包图标左侧）快捷进入；右侧常驻任务追踪条实时显示已追踪任务的进度；任务看板支持任务维护；Agent 可经对话直接创建 / 更新 / 完成 / 推进任务。
 
-> 适用于 DSH Web profile（`dsh web`）。与 [@dsh/backpack](https://github.com/)（背包）并列安装互不影响。
+> 适用于 DSH Web profile（`dsh web`）。与 [@ggame/backpack](https://github.com/USER/ggame/tree/main/packages/backpack)（背包）并列安装互不影响。
 
 ## 特性
 
@@ -30,7 +30,7 @@ DeepSeek Harness 常驻插件：仿魔兽世界任务系统。按 `L` 打开任�
 
 1. 把本仓库放到 profile 的 packages 目录，例如 `~/.dsh/profiles/web/packages/quest`。
 2. `pnpm-workspace.yaml` 加入 `packages/*`（若尚未有）。
-3. `package.json` 的 `dependencies` 加 `"@dsh/quest": "workspace:*"`，`dsh.profile.bundles` 追加 `"@dsh/quest"`。
+3. `package.json` 的 `dependencies` 加 `"@ggame/quest": "workspace:*"`，`dsh.profile.bundles` 追加 `"@ggame/quest"`。
 4. `pnpm install`。
 5. `cordis.patch.yml` 追加：
 

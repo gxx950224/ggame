@@ -3,6 +3,12 @@
   "version": "1.0.0",
   "description": "ggame 共享 UI 核心：面板 store 模式 / 拖拽 / WoW 主题 CSS 变量。浏览器 bundle 在构建期内联这些助手（见 scripts/sync-check.mjs）。",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/USER/ggame.git",
+    "directory": "packages/ui-core"
+  },
+  "homepage": "https://github.com/USER/ggame/tree/main/packages/ui-core",
   "main": "src/store.js",
   "exports": {
     ".": "./src/store.js",

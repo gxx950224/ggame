@@ -4,6 +4,14 @@
   "description": "ggame —— DSH 插件整合包：背包 / 任务 等单体插件的 monorepo，可按整合包或单体安装。",
   "private": true,
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/USER/ggame.git"
+  },
+  "homepage": "https://github.com/USER/ggame",
+  "bugs": {
+    "url": "https://github.com/USER/ggame/issues"
+  },
   "dependencies": {
     "@ggame/backpack": "workspace:*",
     "@ggame/quest": "workspace:*"

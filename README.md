@@ -1,4 +1,4 @@
-﻿# DSH 插件整合包（ggame）
+# DSH 插件整合包（ggame）
 
 DeepSeek Harness 插件集合（monorepo）：背包、任务等单体插件。既可安装**整合包**，也可**单独安装**某个单体插件。
 
@@ -9,8 +9,8 @@ DeepSeek Harness 插件集合（monorepo）：背包、任务等单体插件。�
 | `@ggame/plugins` | 整合包元包（依赖全部单体） | ✅ |
 | `@ggame/backpack` | 背包：物品栏 / 袋子 / 货币 / 全会话费用记账 | ✅ |
 | `@ggame/quest` | 任务：任务面板 / 追踪条 / Agent 联动 / 到期提醒 | ✅ |
-| `@ggame/ui-core`（规划） | 共享 UI 壳 / useStore / 拖拽 / WoW 主题 | — |
-| `@ggame/icons`（规划） | 共享图标源与许可 | — |
+| `@ggame/ui-core` | 共享 UI 壳：useStore / 拖拽 / WoW 主题（构建期内联，不独立安装） | — |
+| `@ggame/icons` | 共享图标源与许可说明（31 个魔兽风格 PNG） | — |
 
 ## 安装
 
@@ -32,8 +32,9 @@ pnpm add @ggame/quest
 ## 特性一览
 
 **@ggame/backpack（背包）**
-- 物品栏/袋子管理/虚空仓库、拖拽放置预览、悬停快速操作条、Shift 批量多选、搜索（/ 快捷键）/过滤/排序、一键整理
-- 全会话 token 费用记账（DeepSeek 官方动态定价 + 峰谷计价、旋转批次增量扫描）、📊 费用可视化（每日趋势/模型占比）、usageLog 归档、.bak 轮换备份
+- 物品栏/袋子管理/虚空仓库、拖拽放置预览、Shift 批量多选、搜索（/ 快捷键）/过滤/排序、一键整理
+- 右键「查看」详情：按内容自动渲染（链接卡片 / Markdown 富文本 / HTML 沙箱页面 / 纯文本）
+- 全会话 token 费用记账（DeepSeek 官方动态定价 + 峰谷计价、旋转批次增量扫描）、悬浮金额卡片查看费用明细（近 7 天每日 + 每模型花费）、usageLog 归档、.bak 轮换备份
 - Agent 工具：backpack_add / backpack_money / backpack_search
 
 **@ggame/quest（任务）**
@@ -50,9 +51,11 @@ pnpm build              # 构建各包客户端 bundle
 pnpm test               # 单元测试（定价/数据模型）
 pnpm test:integration   # 集成测试（需 DSH Web 运行中）
 pnpm check              # 语法检查
-node _shots/cdp-tour.mjs  # 全交互截图测试（需 CDP Chrome，见 _shots/cdp-shot.mjs）
 ```
+
+> 交互截图测试脚本（CDP 驱动，需本机 Chrome）位于仓库本地 `_shots/`（未入库，开发自用）。
 
 ## 许可
 
-MIT。图标为示例素材，发布/商用前请替换（见各包 README）。
+- 代码：MIT（仓库根与各包均含 LICENSE 文件）。
+- 图标：`packages/*/icons/` 与 `packages/icons/` 为 AI 生成示例素材（豆包），**仅供个人使用与演示**；发布/商用前请替换为自有素材或确认素材许可（详见各包 README）。

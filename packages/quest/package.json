@@ -3,6 +3,12 @@
   "version": "1.0.0",
   "description": "DSH 任务插件：仿魔兽世界任务系统——任务面板（L 键）、总体任务看板、任务追踪条、任务维护与 Agent 联动。",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/USER/ggame.git",
+    "directory": "packages/quest"
+  },
+  "homepage": "https://github.com/USER/ggame/tree/main/packages/quest",
   "main": "lib/index.js",
   "exports": {
     ".": "./lib/index.js",

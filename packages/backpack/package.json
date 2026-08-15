@@ -3,6 +3,12 @@
   "version": "1.0.0",
   "description": "DSH 背包：魔兽世界风格物品栏、袋子管理、货币统计与全会话 token 费用记账（DeepSeek 官方动态定价，含峰谷计价）。",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/USER/ggame.git",
+    "directory": "packages/backpack"
+  },
+  "homepage": "https://github.com/USER/ggame/tree/main/packages/backpack",
   "main": "lib/index.js",
   "exports": {
     ".": "./lib/index.js",

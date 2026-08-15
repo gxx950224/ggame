@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build client bundles
+        run: pnpm build
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: Syntax check
+        run: pnpm check
+
+      - name: ui-core sync check
+        run: node packages/ui-core/scripts/sync-check.mjs
