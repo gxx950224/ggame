@@ -25,6 +25,9 @@ const IMAGE_EXT = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp', '.i
 const TEXT_EXT = ['.txt', '.md', '.markdown', '.json', '.js', '.mjs', '.cjs', '.ts', '.tsx', '.jsx', '.yml', '.yaml', '.toml', '.csv', '.html', '.htm', '.css', '.xml', '.log', '.ini', '.conf', '.sh', '.py', '.java', '.go', '.rs', '.c', '.cpp', '.h', '.sql', '.vue', '.svelte']
 const PACKAGE_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const TYPE_ICON_DIR = join(PACKAGE_ROOT, 'icons')
+// 内置皮肤目录：整合包发布时把背景图命名为 ggame-bg.png 放入此目录（仅整合包自带；单体安装为空则不生效）
+const SKIN_DIR = join(PACKAGE_ROOT, 'skin')
+const SKIN_FILES = ['ggame-bg.png', 'ggame-bg.jpg', 'ggame-bg.jpeg', 'ggame-bg.webp']
 
 /** 插件设置：设置 → 插件 → 插件配置 中展示的表单。 */
 export const Config = z.object({
@@ -412,7 +415,8 @@ export async function apply(ctx, config = {}) {
       const entries = await fsp.readdir(TYPE_ICON_DIR)
       entries.forEach((e) => { if (/\.png$/i.test(e)) mediaAllowed.add(normPath(join(TYPE_ICON_DIR, e))) })
     } catch (e) { /* icons dir unavailable */ }
-    // 皮肤背景图路径放行（本地路径）
+    // 皮肤背景图路径放行（内置 skin 目录 + 用户配置的本地路径）
+    for (const f of SKIN_FILES) { try { const st = await fsp.stat(join(SKIN_DIR, f)); if (st && st.size > 0) mediaAllowed.add(normPath(join(SKIN_DIR, f))) } catch (e) { /* not present */ } }
     const bg = String(resolveConfig(settings.get()).backgroundImage || '').trim()
     if (/^(?:[A-Za-z]:[\\/]|~[\\/]|[\\/]|\.{1,2}[\\/])/.test(bg)) mediaAllowed.add(normPath(bg))
     if (!data) return
@@ -593,9 +597,15 @@ export async function apply(ctx, config = {}) {
   async function dispatch(method, args) {
     switch (method) {
       case 'get-config': {
-        // 皮肤等客户端需要读取的配置
+        // 皮肤：用户配置的 backgroundImage 优先；否则若整合包内置皮肤图存在则用它（单体安装无图 → 空）
         const cfg = resolveConfig(settings.get())
-        return { ok: true, config: { backgroundImage: String(cfg.backgroundImage || '') } }
+        let bg = String(cfg.backgroundImage || '').trim()
+        if (!bg) {
+          for (const f of SKIN_FILES) {
+            try { const st = await fsp.stat(join(SKIN_DIR, f)); if (st && st.size > 0) { bg = join(SKIN_DIR, f); break } } catch (e) { /* not present */ }
+          }
+        }
+        return { ok: true, config: { backgroundImage: bg } }
       }
       case 'get-state': {
         await ensureLoaded()
