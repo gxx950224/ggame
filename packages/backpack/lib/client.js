@@ -674,7 +674,8 @@ function apply(ctx) {
       const [skills, setSkills] = React.useState([])
       const [detecting, setDetecting] = React.useState(false)
       const fileRef = React.useRef(null)
-      // F16 选择本地文件：名字默认文件名；文本文件读内容入库，图片/视频存 data URL
+      // F16 选择本地文件：名字默认文件名；文本读内容、图片存 data URL，都先填入面板由用户确认后放入
+      const [selFile, setSelFile] = React.useState(null)
       const pickFile = () => { const el = fileRef.current; if (el) el.click() }
       const onFile = (e) => {
         const f = e.target && e.target.files && e.target.files[0]
@@ -684,13 +685,20 @@ function apply(ctx) {
         const isText = /\.(txt|md|markdown|json|js|mjs|cjs|ts|tsx|jsx|yml|yaml|toml|csv|html?|htm|css|xml|log|ini|conf|sh|py|java|go|rs|c|cpp|h|sql|vue|svelte)$/i.test(nm) || (typeof f.type === 'string' && f.type.indexOf('text/') === 0)
         if (isText && f.size <= 512 * 1024) {
           const r = new FileReader()
-          r.onload = () => { setName(nm); setText(String(r.result || '')) }
+          r.onload = () => { setSelFile(null); setName(nm); setText(String(r.result || '')) }
           r.onerror = () => toast('读取文件失败')
           r.readAsText(f)
           toast('已读取「' + nm + '」，确认后放入背包')
         } else if (typeof f.type === 'string' && f.type.indexOf('image/') === 0 && f.size <= 1.5 * 1024 * 1024) {
           const r = new FileReader()
-          r.onload = () => { const d = String(r.result || ''); addItems([{ type: 'image', name: nm, payload: d, icon: d, rarity: 3, extra: { size: f.size } }], bagId) }
+          r.onload = () => {
+            const d = String(r.result || '')
+            setSelFile({ name: nm, type: 'image', payload: d, icon: d, rarity: 3, extra: { size: f.size } })
+            setName(nm)
+            setType('image')
+            setText('')
+            toast('已选择图片「' + nm + '」，确认后放入背包')
+          }
           r.onerror = () => toast('读取文件失败')
           r.readAsDataURL(f)
         } else {
@@ -719,6 +727,11 @@ function apply(ctx) {
       }, [text])
       const close = () => patch({ modal: null })
       const add = () => {
+        if (selFile) {
+          addItems([{ type: selFile.type, name: name || selFile.name, payload: selFile.payload, rarity: rarity, flavor: flavor, icon: selFile.icon || icon.trim(), extra: Object.assign({}, selFile.extra || {}) }], bagId)
+          close()
+          return
+        }
         const v = text.trim()
         if (!v) return
         addItems([{ type: type, name: name || v.slice(0, 20), payload: v, rarity: rarity, flavor: flavor, icon: icon.trim(), extra: (spec && spec.extra) || {} }], bagId)
@@ -737,6 +750,14 @@ function apply(ctx) {
           React.createElement('span', { style: { fontSize: 11, color: '#7a7262' } }, '文本文件直接读入内容；图片/视频存入背包；其它类型请复制真实路径粘贴（右键可打开文件所在位置）'),
           React.createElement('input', { ref: fileRef, type: 'file', style: { display: 'none' }, onChange: onFile }),
         ),
+        selFile ? React.createElement('div', { className: 'bp-field' },
+          React.createElement('label', null, '已选择本地文件（确认后放入背包，可修改名称/品质）'),
+          React.createElement('div', { className: 'row' },
+            React.createElement('img', { src: selFile.payload, alt: '', style: { width: 40, height: 40, borderRadius: 4, border: '1px solid #443d31', background: '#0f0c0a', objectFit: 'contain' } }),
+            React.createElement('span', { className: 'grow', style: { fontSize: 12, color: '#a49c8c' } }, selFile.name + '（' + ((TYPES[selFile.type] || {}).label || selFile.type) + '）'),
+            React.createElement('button', { className: 'bp-btn', onClick: () => setSelFile(null) }, '移除'),
+          ),
+        ) : null,
         detecting ? React.createElement('div', { style: { fontSize: 11, color: '#a49c8c', marginBottom: 8 } }, '识别中…')
           : (spec ? React.createElement('div', { style: { fontSize: 11, color: '#1eff00', marginBottom: 8 } }, '已识别为：' + (TYPES[spec.type] || {}).label) : null),
         React.createElement('div', { className: 'row' },
