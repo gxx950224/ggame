@@ -96,9 +96,6 @@ function apply(ctx) {
       '.bp-slot.selected{border-color:#c7b68c;box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 0 0 1px #c7b68c,0 0 14px rgba(199,182,140,.55)}' +
       '.bp-selmark{position:absolute;right:-5px;bottom:-5px;background:#c7b68c;color:#0f0c0a;border-radius:6px;font-size:11px;padding:1px 5px;font-weight:700;z-index:3;box-shadow:0 0 6px rgba(199,182,140,.6)}' +
       '.bp-slot.dragover{border-color:#c7b68c;box-shadow:0 0 0 1px #c7b68c,0 0 12px rgba(199,182,140,.45)}' +
-      '.bp-quick{position:absolute;left:3px;right:3px;bottom:3px;display:flex;justify-content:center;gap:2px;background:rgba(12,10,8,.9);border:1px solid #4a4338;border-radius:5px;padding:2px;z-index:3}' +
-      '.bp-quick button{width:22px;height:20px;border:0;background:transparent;color:#c7b68c;cursor:pointer;font-size:11px;line-height:1}' +
-      '.bp-quick button:hover{color:#e8e2d4;background:rgba(199,182,140,.15);border-radius:3px}' +
       '.bp-block-head.dragover{background:rgba(199,182,140,.18);border-color:#c7b68c}' +
       '.bp-slot.stale{opacity:.62}' +
       '.bp-slot-empty{border-style:dashed;color:#453e32;opacity:.55;font-size:26px}' +
@@ -141,6 +138,27 @@ function apply(ctx) {
       '.bp-ta{width:100%;box-sizing:border-box;min-height:160px;background:#0f0c0a;border:1px solid #3b352c;color:#e0ddd4;border-radius:6px;padding:9px 12px;font-size:14px;outline:none;resize:vertical;font-family:inherit}' +
       '.bp-ta:focus{border-color:#6f6857}' +
       '.bp-pre{background:#0f0c0a;border:1px solid #332d25;border-radius:6px;padding:10px;font-size:12px;white-space:pre-wrap;word-break:break-all;max-height:52vh;overflow:auto;color:#cfc7b4;font-family:ui-monospace,Consolas,monospace}' +
+      '.bp-md{max-height:52vh;overflow:auto;padding:12px 14px;font-size:13px;line-height:1.7;color:#d6d2c8;background:#0f0c0a;border:1px solid #332d25;border-radius:6px;word-break:break-word}' +
+      '.bp-md h1{font-size:20px;color:#c7b68c;border-bottom:1px solid #332d25;padding-bottom:6px;margin:12px 0 8px}' +
+      '.bp-md h2{font-size:17px;color:#c7b68c;margin:14px 0 6px}' +
+      '.bp-md h3,.bp-md h4{font-size:15px;color:#d8b558;margin:10px 0 4px}' +
+      '.bp-md h5,.bp-md h6{font-size:13px;color:#d8b558;margin:8px 0 4px}' +
+      '.bp-md p{margin:6px 0}' +
+      '.bp-md code{background:#241d15;border:1px solid #332d25;border-radius:4px;padding:1px 5px;font-size:12px;font-family:ui-monospace,Consolas,monospace;color:#e8c87a}' +
+      '.bp-md pre{background:#0a0806;border:1px solid #332d25;border-radius:6px;padding:10px;overflow:auto;font-size:12px}' +
+      '.bp-md pre code{border:0;background:none;padding:0}' +
+      '.bp-md a{color:#6ab0ff;text-decoration:underline;cursor:pointer}' +
+      '.bp-md ul,.bp-md ol{margin:6px 0;padding-left:22px}' +
+      '.bp-md li{margin:3px 0}' +
+      '.bp-md blockquote{border-left:3px solid #c7b68c;margin:8px 0;padding:2px 12px;color:#a49c8c;background:#1a1510}' +
+      '.bp-md hr{border:0;border-top:1px solid #332d25;margin:10px 0}' +
+      '.bp-md strong{color:#e8e2d4}' +
+      '.bp-md table{border-collapse:collapse;margin:8px 0}' +
+      '.bp-md th,.bp-md td{border:1px solid #332d25;padding:4px 10px;font-size:12px}' +
+      '.bp-md th{background:#241d15;color:#c7b68c}' +
+      '.bp-md img{max-width:100%;border-radius:6px}' +
+      '.bp-link-box{background:#0f0c0a;border:1px solid #332d25;border-radius:6px;padding:12px;word-break:break-all}' +
+      '.bp-link-box a{color:#6ab0ff;font-size:14px;text-decoration:underline}' +
       '.bp-modal .row{display:flex;gap:8px;align-items:center;margin-bottom:8px}' +
       '.bp-modal .row .grow{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12.5px}' +
       '.bp-loot-item{display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid #332d25;border-radius:6px;margin-bottom:4px;background:#211d17;font-size:12.5px}' +
@@ -158,7 +176,7 @@ function apply(ctx) {
     )
     ctx.effect(() => disposeCss)
 
-    let store = { open: false, data: null, activeBag: null, viewMode: 'unified', category: 'all', search: '', rarityFilter: 'all', sortMode: 'type', tooltip: null, menu: null, modal: null, toast: null, insert: null, collapsedBags: {}, money: null, usage: null, loading: true, dragOver: null, hoverItem: null, savedAt: 0, saveFailed: false, sel: [] }
+    let store = { open: false, data: null, activeBag: null, viewMode: 'unified', category: 'all', search: '', rarityFilter: 'all', sortMode: 'type', tooltip: null, menu: null, modal: null, toast: null, insert: null, collapsedBags: {}, money: null, usage: null, loading: true, dragOver: null, savedAt: 0, saveFailed: false, sel: [] }
     let tipTimer = null
     const listeners = new Set()
     function patch(p) { store = Object.assign({}, store, p); listeners.forEach((f) => { try { f() } catch (e) {} }) }
@@ -470,7 +488,6 @@ function apply(ctx) {
         onDragLeave: () => { if (getStore().dragOver === (props.bagId + ':' + props.slot)) patch({ dragOver: null }) },
         onDrop: (e) => { e.preventDefault(); patch({ dragOver: null }); const id = e.dataTransfer.getData('text/plain'); if (id) moveItem(id, props.bagId, props.slot) },
       }
-      const hovered = st.hoverItem === item.id
       return React.createElement('div', Object.assign({
         className: 'bp-slot' + (stale ? ' stale' : '') + (st.activeItem === item.id ? ' selected' : '') + (draggingOver ? ' dragover' : ''),
         draggable: true,
@@ -489,22 +506,15 @@ function apply(ctx) {
         onContextMenu: (e) => { e.preventDefault(); clearTip(); patch({ menu: { itemId: item.id, x: e.clientX, y: e.clientY } }) },
         onMouseEnter: (e) => {
           clearTip()
-          patch({ hoverItem: item.id })
           tipTimer = defer(() => patch({ tooltip: { itemId: item.id, x: e.clientX, y: e.clientY } }), 260)
         },
-        onMouseLeave: () => { clearTip(); if (getStore().hoverItem === item.id) patch({ hoverItem: null }) },
+        onMouseLeave: () => { clearTip() },
       }, dropHandlers),
         renderIcon(item, 56, 44),
         React.createElement('div', { className: 'bp-slot-name' }, item.name),
         item.count > 1 ? React.createElement('div', { className: 'bp-count' }, String(item.count)) : null,
         item.fav ? React.createElement('div', { className: 'bp-fav' }, '★') : null,
         st.activeItem === item.id ? React.createElement('div', { className: 'bp-selmark' }, '✓') : null,
-        // F7 悬停快速操作条：使用 / 复制 / 发送
-        hovered ? React.createElement('div', { className: 'bp-quick', onClick: (e) => e.stopPropagation() },
-          React.createElement('button', { title: '使用', onClick: (e) => { e.stopPropagation(); clearTip(); useItem(item) } }, '▶'),
-          React.createElement('button', { title: '复制', onClick: (e) => { e.stopPropagation(); clearTip(); copyItem(item) } }, '⧉'),
-          React.createElement('button', { title: '发送到对话', onClick: (e) => { e.stopPropagation(); clearTip(); sendToComposer(String(item.payload || '')) } }, '✉'),
-        ) : null,
       )
     }
 
@@ -601,7 +611,7 @@ function apply(ctx) {
       if (!item) return null
       const close = () => patch({ menu: null })
       const rows = []
-      rows.push({ label: '使用', icon: 'arrow', fn: () => { close(); useItem(item) } })
+      rows.push({ label: '查看', icon: 'open', fn: () => { close(); patch({ modal: { kind: 'preview', itemId: item.id } }) } })
       rows.push({ label: '发送到对话', icon: 'scroll', fn: () => { close(); sendToComposer(String(item.payload || '')) } })
       rows.push({ label: '复制', icon: 'file', fn: () => { close(); copyItem(item) } })
       rows.push({ label: item.fav ? '取消固定' : '固定物品', icon: 'pin', fn: () => { close(); toggleFav(item.id) } })
@@ -757,6 +767,95 @@ function apply(ctx) {
       )
     }
 
+    // ── 极简 Markdown 渲染（客户端零依赖）──
+    function mdInline(text) {
+      const out = []
+      const re = /(`[^`]+`)|(\*\*[^*]+\*\*)|(\*[^*]+\*)|(\[[^\]]+\]\([^)\s]+\))/g
+      let last = 0, m, k = 0
+      while ((m = re.exec(text))) {
+        if (m.index > last) out.push(text.slice(last, m.index))
+        if (m[1]) out.push(React.createElement('code', { key: 'c' + k }, m[1].slice(1, -1)))
+        else if (m[2]) out.push(React.createElement('strong', { key: 'b' + k }, m[2].slice(2, -2)))
+        else if (m[3]) out.push(React.createElement('em', { key: 'i' + k }, m[3].slice(1, -1)))
+        else if (m[4]) {
+          const mm = m[4].match(/^\[([^\]]+)\]\(([^)\s]+)\)$/)
+          if (mm) out.push(React.createElement('a', { key: 'a' + k, href: mm[2], target: '_blank', rel: 'noopener' }, mm[1]))
+          else out.push(m[4])
+        }
+        k++; last = re.lastIndex
+      }
+      if (last < text.length) out.push(text.slice(last))
+      return out
+    }
+    function mdToEl(md) {
+      const lines = String(md || '').replace(/\r\n/g, '\n').split('\n')
+      const out = []
+      let i = 0, k = 0
+      const push = (el) => { out.push(React.cloneElement(el, { key: k++ })) }
+      while (i < lines.length) {
+        const line = lines[i]
+        const fence = line.match(/^```([\w-]*)\s*$/)
+        if (fence) {
+          const buf = []
+          i++
+          while (i < lines.length && !/^```\s*$/.test(lines[i])) { buf.push(lines[i]); i++ }
+          i++
+          push(React.createElement('pre', null, React.createElement('code', null, buf.join('\n'))))
+          continue
+        }
+        const t = line.trim()
+        if (!t) { i++; continue }
+        const h = t.match(/^(#{1,6})\s+(.*)$/)
+        if (h) { push(React.createElement(h[1].length <= 2 ? 'h' + h[1].length : 'h3', null, mdInline(h[2]))); i++; continue }
+        if (/^([-*_])\1{2,}\s*$/.test(t)) { push(React.createElement('hr', null)); i++; continue }
+        if (t.indexOf('>') === 0) {
+          const buf = []
+          while (i < lines.length && lines[i].trim().indexOf('>') === 0) { buf.push(lines[i].trim().slice(1).trim()); i++ }
+          push(React.createElement('blockquote', null, mdInline(buf.join(' '))))
+          continue
+        }
+        if (/^[-*+]\s+/.test(t)) {
+          const items = []
+          while (i < lines.length && /^\s*[-*+]\s+/.test(lines[i])) { items.push(React.createElement('li', { key: items.length }, mdInline(lines[i].replace(/^\s*[-*+]\s+/, '')))); i++ }
+          push(React.createElement('ul', null, items))
+          continue
+        }
+        if (/^\d+\.\s+/.test(t)) {
+          const items = []
+          while (i < lines.length && /^\s*\d+\.\s+/.test(lines[i])) { items.push(React.createElement('li', { key: items.length }, mdInline(lines[i].replace(/^\s*\d+\.\s+/, '')))); i++ }
+          push(React.createElement('ol', null, items))
+          continue
+        }
+        if (/^\|.*\|$/.test(t) && i + 1 < lines.length && /^\|[\s:|-]+\|$/.test(lines[i + 1].trim())) {
+          const head = t.slice(1, -1).split('|').map((c) => c.trim())
+          const rows = []
+          i += 2
+          while (i < lines.length && /^\|.*\|$/.test(lines[i].trim())) {
+            const cells = lines[i].trim().slice(1, -1).split('|').map((c) => React.createElement('td', { key: 'td' + rows.length }, mdInline(c.trim())))
+            rows.push(React.createElement('tr', { key: rows.length }, cells))
+            i++
+          }
+          push(React.createElement('table', null,
+            React.createElement('thead', null, React.createElement('tr', null, head.map((c, ci) => React.createElement('th', { key: ci }, mdInline(c))))),
+            React.createElement('tbody', null, rows)))
+          continue
+        }
+        const buf = [t]
+        i++
+        while (i < lines.length && lines[i].trim() && !/^(#{1,6}\s|```|>|[-*+]\s|\d+\.\s)/.test(lines[i].trim()) && !/^([-*_])\1{2,}\s*$/.test(lines[i].trim())) { buf.push(lines[i].trim()); i++ }
+        push(React.createElement('p', null, mdInline(buf.join(' '))))
+      }
+      return out
+    }
+    // 详情页渲染类型：html（内嵌 iframe 沙箱） / md（Markdown 渲染） / link（链接卡片） / text（纯文本）
+    function previewKind(item, text) {
+      const name = String(item.name || '')
+      if (/\.(html?|xhtml)$/i.test(name) || /^\s*<(?:!doctype\s+html|html|head|body)\b/i.test(String(text || ''))) return 'html'
+      if (/\.(md|markdown)$/i.test(name) || /^\s*(#{1,6}\s|```|>|[-*+]\s|\d+\.\s)/m.test(String(text || '')) || /^\s*\|\s*[^|]+\s*\|/m.test(String(text || ''))) return 'md'
+      if (item.type === 'link') return 'link'
+      return 'text'
+    }
+
     function PreviewModal(props) {
       const item = findItem(props.itemId)
       const [content, setContent] = React.useState(null)
@@ -792,7 +891,45 @@ function apply(ctx) {
           ),
         )
       } else {
-        body = React.createElement('pre', { className: 'bp-pre' }, content === null ? '加载中…' : (content || ''))
+        const text = content === null ? (isPath(p) ? '' : p) : content
+        const kind = previewKind(item, text)
+        if (kind === 'html') {
+          body = React.createElement('div', null,
+            text === '' ? React.createElement('div', { className: 'bp-pre' }, '加载中…')
+              : React.createElement('iframe', { title: item.name, sandbox: '', style: { width: '100%', height: '52vh', border: 0, borderRadius: 6, background: '#fff', display: 'block' }, srcDoc: text }),
+            React.createElement('div', { className: 'row', style: { marginTop: 10 } },
+              React.createElement('button', { className: 'bp-btn', onClick: () => copyText(text) }, '复制源码'),
+              React.createElement('button', { className: 'bp-btn', onClick: () => sendToComposer('这是物品「' + item.name + '」的 HTML 内容：\n```html\n' + text.slice(0, 6000) + '\n```') }, '发送到对话'),
+            ),
+          )
+        } else if (kind === 'md') {
+          body = React.createElement('div', null,
+            React.createElement('div', { className: 'bp-md' }, text === '' ? React.createElement('p', null, '加载中…') : mdToEl(text)),
+            React.createElement('div', { className: 'row', style: { marginTop: 10 } },
+              React.createElement('button', { className: 'bp-btn', onClick: () => copyText(text) }, '复制内容'),
+              React.createElement('button', { className: 'bp-btn', onClick: () => sendToComposer(String(text || '')) }, '发送到对话'),
+            ),
+          )
+        } else if (kind === 'link') {
+          body = React.createElement('div', null,
+            React.createElement('div', { className: 'bp-link-box' },
+              React.createElement('a', { href: p, target: '_blank', rel: 'noopener' }, p),
+            ),
+            React.createElement('div', { className: 'row', style: { marginTop: 10 } },
+              React.createElement('button', { className: 'bp-btn', style: { borderColor: '#6f6857', color: '#c7b68c' }, onClick: () => { try { if (window.open) window.open(p, '_blank', 'noopener') } catch (e) { toast('无法打开链接') } } }, '打开链接'),
+              React.createElement('button', { className: 'bp-btn', onClick: () => copyText(p) }, '复制链接'),
+              React.createElement('button', { className: 'bp-btn', onClick: () => sendToComposer(p) }, '发送到对话'),
+            ),
+          )
+        } else {
+          body = React.createElement('div', null,
+            React.createElement('pre', { className: 'bp-pre' }, content === null ? '加载中…' : (content || '')),
+            React.createElement('div', { className: 'row', style: { marginTop: 10 } },
+              React.createElement('button', { className: 'bp-btn', onClick: () => copyText(content === null ? p : content) }, '复制内容'),
+              React.createElement('button', { className: 'bp-btn', onClick: () => sendToComposer(String(content === null ? p : content || '')) }, '发送到对话'),
+            ),
+          )
+        }
       }
       return React.createElement(ModalShell, { title: (TYPES[item.type] || {}).label + '：' + item.name, onClose: close }, body)
     }
