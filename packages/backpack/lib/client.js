@@ -190,17 +190,76 @@ function apply(ctx) {
       return s
     }
     const rpc = (method, args) => fetch('/_dsh/backpack/api', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ method: method, args: args || null }), credentials: 'same-origin' }).then((r) => r.json()).catch((e) => ({ ok: false, error: String((e && e.message) || e) }))
-    // 皮肤：把配置的背景图应用到 DSH 网页背景（本地路径经媒体路由，URL 直用）
+    // 皮肤：把背景图应用到 DSH 网页，并覆盖 DSH 主题 CSS 变量为深色半透明，让背景图透出且文字保持可读
+    const SKIN_VARS = ['--dsw-alias-bg-base', '--dsw-alias-bg-layer-1', '--dsw-alias-bg-layer-2', '--dsw-alias-bg-overlay', '--dsw-alias-label-primary', '--dsw-alias-label-secondary', '--dsw-alias-border-l1', '--dsw-alias-border-l2', '--dsw-specific-sidebar-fill']
+    const SKIN_VALUES = {
+      '--dsw-alias-bg-base': 'rgba(10, 8, 6, 0.72)',
+      '--dsw-alias-bg-layer-1': 'rgba(16, 12, 9, 0.86)',
+      '--dsw-alias-bg-layer-2': 'rgba(20, 16, 11, 0.92)',
+      '--dsw-alias-bg-overlay': 'rgba(12, 9, 7, 0.97)',
+      '--dsw-alias-label-primary': '#ece6d8',
+      '--dsw-alias-label-secondary': '#b9b0a0',
+      '--dsw-alias-border-l1': 'rgba(133,127,103,.28)',
+      '--dsw-alias-border-l2': 'rgba(133,127,103,.42)',
+      '--dsw-specific-sidebar-fill': 'rgba(12, 10, 8, 0.6)',
+    }
+    let skinPrev = null
+    function skinCover() {
+      // 把覆盖视口 ≥85% 的不透明背景容器改为半透明深色，透出皮肤图（小卡片/输入框保留自身背景）
+      try {
+        const vw = window.innerWidth, vh = window.innerHeight
+        const queue = [document.body]
+        let seen = 0
+        for (let i = 0; i < queue.length && seen < 500; i++) {
+          const el = queue[i]
+          for (const c of el.children) {
+            if (!c || typeof c.getBoundingClientRect !== 'function') continue
+            seen++
+            if (c.children && c.children.length) queue.push(c)
+            const r = c.getBoundingClientRect()
+            if (r.width >= vw * 0.85 && r.height >= vh * 0.85) {
+              const s = getComputedStyle(c)
+              if (s.backgroundColor && s.backgroundColor !== 'rgba(0, 0, 0, 0)' && s.backgroundColor !== 'transparent') {
+                c.setAttribute('data-ggame-skin', '1')
+                c.style.setProperty('background-color', 'rgba(10, 8, 6, 0.72)', 'important')
+              }
+            }
+          }
+        }
+      } catch (e) { /* ignore */ }
+    }
+    function skinRestore() {
+      try {
+        document.querySelectorAll('[data-ggame-skin]').forEach((el) => {
+          try { el.style.removeProperty('background-color') } catch (e) { /* ignore */ }
+          el.removeAttribute('data-ggame-skin')
+        })
+        if (skinPrev) {
+          SKIN_VARS.forEach((v) => { try { document.documentElement.style.setProperty(v, skinPrev[v] || '') } catch (e) { /* ignore */ } })
+          skinPrev = null
+        }
+        document.body.style.background = ''
+      } catch (e) { /* ignore */ }
+    }
     function applySkin() {
       try {
         rpc('get-config').then((res) => {
           try {
+            const root = document && document.documentElement
             const bg = res && res.ok ? String((res.config && res.config.backgroundImage) || '').trim() : ''
-            if (!bg || !document || !document.body) return
+            if (!bg || !document || !document.body || !root) { skinRestore(); return }
             const src = /^https?:\/\//i.test(bg) ? bg : '/_dsh/backpack/media?p=' + enc(bg)
             document.body.style.background = 'rgba(8,6,4,.72) url("' + src + '") no-repeat center/cover fixed'
             document.body.style.backgroundSize = 'cover'
             document.body.style.backgroundAttachment = 'fixed'
+            // 覆盖 DSH 主题变量：深色半透明 + 亮字（记录原值便于还原）
+            if (!skinPrev) {
+              skinPrev = {}
+              SKIN_VARS.forEach((v) => { try { skinPrev[v] = root.style.getPropertyValue(v) } catch (e) { skinPrev[v] = '' } })
+            }
+            SKIN_VARS.forEach((v) => { try { root.style.setProperty(v, SKIN_VALUES[v]) } catch (e) { /* ignore */ } })
+            // 覆盖全屏不透明容器（DSH 浅色框架）
+            skinCover()
           } catch (e) { /* ignore */ }
         })
       } catch (e) { /* ignore */ }
