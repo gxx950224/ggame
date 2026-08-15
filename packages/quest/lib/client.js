@@ -554,7 +554,7 @@ function apply(ctx) {
           return React.createElement('div', { key: q.id, className: 'qst-quest' + (s.selected === q.id ? ' selected' : ''), onClick: () => patch({ selected: s.selected === q.id ? null : q.id }), onContextMenu: (e) => { e.preventDefault(); patch({ menu: { kind: 'quest', id: q.id, x: e.clientX, y: e.clientY } }) } },
             React.createElement('div', { className: 'qhead' },
               React.createElement('span', { className: 'tt', style: { color: lvl.color } }, q.title),
-              React.createElement('span', { className: 'meta' }, lvl.label + '（' + q.level + '级） · ' + st.label + (q.category ? ' · ' + q.category : '') + (s.processing === q.id ? ' ⏳处理中' : ''))),
+              React.createElement('span', { className: 'meta' }, lvl.label + ' · ' + st.label + (q.category ? ' · ' + q.category : '') + (s.processing === q.id ? ' ⏳处理中' : ''))),
             React.createElement('div', { className: 'qobj' }, objText, tl ? React.createElement('span', { style: { color: tl.color, marginLeft: 8, flex: 'none' } }, '⏳ ' + tl.label) : null))
         }))
   }
@@ -568,7 +568,7 @@ function apply(ctx) {
     return React.createElement('div', { className: 'qst-detail' },
       React.createElement('div', { className: 'dt-head' },
         React.createElement('span', { className: 'dt-title', style: { color: lvl.color } }, q.title),
-        React.createElement('span', { style: { fontSize: 12, color: '#a49c8c' } }, lvl.label + '（' + q.level + '级） · ' + st.label + (q.category ? ' · ' + q.category : '') + (q.recur === 'daily' ? ' · 每日' : q.recur === 'weekly' ? ' · 每周' : '')),
+        React.createElement('span', { style: { fontSize: 12, color: '#a49c8c' } }, lvl.label + ' · ' + st.label + (q.category ? ' · ' + q.category : '') + (q.recur === 'daily' ? ' · 每日' : q.recur === 'weekly' ? ' · 每周' : '')),
       ),
       q.description ? React.createElement('div', { className: 'dt-desc' }, q.description) : null,
       React.createElement('div', null,

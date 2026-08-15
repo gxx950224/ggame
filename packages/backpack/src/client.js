@@ -714,12 +714,11 @@ function apply(ctx) {
       const rarityOptions = RARITIES.map((r) => React.createElement('option', { key: r.id, value: String(r.id) }, r.label))
       return React.createElement(ModalShell, { title: '添加物品', onClose: close },
         React.createElement('div', { className: 'bp-field' },
-          React.createElement('label', null, '粘贴内容（链接 / 提示词 / 路径 / MCP JSON / 插件 ID…）自动识别类型'),
+          React.createElement('label', null, '粘贴内容，自动识别类型'),
           React.createElement('textarea', { className: 'bp-ta', value: text, placeholder: 'https://…  或  C:\\path\\to\\file  或 一段提示词…', onChange: (e) => setText(e.target.value) }),
         ),
         React.createElement('div', { className: 'row', style: { marginBottom: 8 } },
           React.createElement('button', { className: 'bp-btn', onClick: pickFile }, '📁 选择本地文件'),
-          React.createElement('span', { style: { fontSize: 11, color: '#7a7262' } }, '文本文件直接读入内容；图片/视频存入背包；其它类型请复制真实路径粘贴（右键可打开文件所在位置）'),
           React.createElement('input', { ref: fileRef, type: 'file', style: { display: 'none' }, onChange: onFile }),
         ),
         selFile ? React.createElement('div', { className: 'bp-field' },
