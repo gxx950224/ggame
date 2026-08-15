@@ -1183,6 +1183,12 @@ function apply(ctx) {
       const [pos, setPos] = React.useState(() => {
         try { const raw = window.localStorage.getItem('bp-panel-pos'); return raw ? JSON.parse(raw) : null } catch (e) { /* ignore */ return null }
       })
+      // 窗口尺寸变化时清除拖拽位置，吸附回右缘（像任务追踪条一样始终跟随视口右缘）
+      React.useEffect(() => {
+        const onResize = () => { try { window.localStorage.removeItem('bp-panel-pos') } catch (e) { /* ignore */ } setPos(null) }
+        window.addEventListener('resize', onResize)
+        return () => { try { window.removeEventListener('resize', onResize) } catch (e) {} }
+      }, [])
       const ref = React.useRef(null)
       // C2 虚拟渲染：unified 大列表按滚动窗口渲染
       const bodyRef = React.useRef(null)
