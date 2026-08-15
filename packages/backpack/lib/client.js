@@ -79,7 +79,7 @@ function apply(ctx) {
       '.bp-btn{background:#221d16;border:1px solid #443d31;color:#d3cec2;border-radius:6px;padding:6px 12px;font-size:14px;cursor:pointer;white-space:nowrap}' +
       '.bp-btn:hover{border-color:#6f6857;color:#efe9da}' +
       '.bp-main{display:flex;flex:1;min-height:0;overflow:hidden}' +
-      '.bp-side{width:240px;flex:none;border-right:1px solid #332d25;overflow-y:auto;padding:8px 0;background:rgba(0,0,0,.12)}' +
+      '.bp-side{width:clamp(140px,26%,240px);flex:none;border-right:1px solid #332d25;overflow-y:auto;padding:8px 0;background:rgba(0,0,0,.12)}' +
       '.bp-side-item{display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:pointer;font-size:14px;color:#b9b4a8;white-space:nowrap}' +
       '.bp-side-item:hover{background:rgba(199,182,140,.08)}' +
       '.bp-side-item.active{background:rgba(199,182,140,.16);color:#e8e2d4;box-shadow:inset 3px 0 0 #c7b68c}' +
@@ -181,7 +181,7 @@ function apply(ctx) {
     )
     ctx.effect(() => disposeCss)
 
-    let store = { open: true, data: null, activeBag: null, viewMode: 'unified', category: 'all', search: '', rarityFilter: 'all', sortMode: 'type', tooltip: null, menu: null, modal: null, toast: null, insert: null, collapsedBags: {}, money: null, usage: null, loading: true, dragOver: null, savedAt: 0, saveFailed: false, sel: [], usageOpen: false }
+    let store = { open: false, data: null, activeBag: null, viewMode: 'unified', category: 'all', search: '', rarityFilter: 'all', sortMode: 'type', tooltip: null, menu: null, modal: null, toast: null, insert: null, collapsedBags: {}, money: null, usage: null, loading: true, dragOver: null, savedAt: 0, saveFailed: false, sel: [], usageOpen: false }
     let tipTimer = null
     const listeners = new Set()
     function patch(p) { store = Object.assign({}, store, p); listeners.forEach((f) => { try { f() } catch (e) {} }) }
@@ -1194,11 +1194,25 @@ function apply(ctx) {
       const bodyRef = React.useRef(null)
       const [scrollTop, setScrollTop] = React.useState(0)
       const [bodyH, setBodyH] = React.useState(600)
+      const [bodyW, setBodyW] = React.useState(480)
       React.useEffect(() => {
         const el = bodyRef.current
-        if (el) setBodyH(el.clientHeight || 600)
+        if (el) { setBodyH(el.clientHeight || 600); setBodyW(el.clientWidth || 480) }
       }, [d, s.open, s.viewMode])
+      // 窗口/面板尺寸变化时刷新 body 宽高，让格子列数自适应
+      React.useEffect(() => {
+        const onResize = () => {
+          const el = bodyRef.current
+          if (!el) return
+          setBodyH(el.clientHeight || 600)
+          setBodyW(el.clientWidth || 480)
+        }
+        window.addEventListener('resize', onResize)
+        return () => { try { window.removeEventListener('resize', onResize) } catch (e) {} }
+      }, [])
       React.useEffect(() => { setScrollTop(0) }, [s.search, s.rarityFilter, s.sortMode, s.category, d])
+      // 按物品区宽度自适应列数（格子固定 80px，窄面板列数变少、居中）
+      const cols = Math.max(2, Math.floor((bodyW - 8) / 84))
       if (!d) return React.createElement('div', { className: 'bp-panel' }, React.createElement('div', { className: 'bp-head' }, React.createElement('span', { className: 't' }, '背包'), React.createElement('span', { className: 's' }, '加载中…')))
       const bags = d.bags.slice().sort((a, b) => a.order - b.order)
       const searching = !!(s.search || s.rarityFilter !== 'all')
@@ -1208,7 +1222,7 @@ function apply(ctx) {
         const list = filteredItems(d, s)
         const cells = []
         const ROW_H = 84
-        const COLS = 6
+        const COLS = cols
         if (s.sortMode === 'type') {
           // 类型分组模式：行高不定，不做窗口切分（分组场景通常数量可控）
           TYPE_ORDER.forEach((t) => {
@@ -1235,7 +1249,7 @@ function apply(ctx) {
         }
         cells.push(React.createElement('div', { key: 'addrow', className: 'bp-addrow', onClick: () => patch({ modal: { kind: 'add' } }) }, '＋ 添加物品'))
         body = list.length || cells.length > 1
-          ? React.createElement('div', { className: 'bp-grid', style: { gridTemplateColumns: 'repeat(6, 80px)', justifyContent: 'center' } }, cells)
+          ? React.createElement('div', { className: 'bp-grid', style: { gridTemplateColumns: 'repeat(' + COLS + ', 80px)', justifyContent: 'center' } }, cells)
           : React.createElement('div', { style: { color: '#7a7262', fontSize: 12, padding: 24, textAlign: 'center' } },
             React.createElement('div', { style: { fontSize: 28, marginBottom: 8 } }, '🎒'),
             React.createElement('div', null, '背包空空如也'),
@@ -1262,7 +1276,7 @@ function apply(ctx) {
               React.createElement('span', { className: 'cap' }, cnt + '/' + cap),
               React.createElement('button', { className: 'bp-btn', style: { padding: '2px 8px', fontSize: 12 }, title: '增加一页（6×4 = 24 格）', onClick: (e) => { e.stopPropagation(); addPage(bag.id) } }, '＋1页'),
               React.createElement('button', { className: 'bp-btn', style: { padding: '2px 8px', fontSize: 12 }, title: '减少一页（24 格）', onClick: (e) => { e.stopPropagation(); subPage(bag.id) } }, '－1页')),
-            (s.collapsedBags && s.collapsedBags[bag.id]) ? null : React.createElement('div', { className: 'bp-grid', style: { gridTemplateColumns: 'repeat(' + bag.cols + ', 80px)' } }, gridCells))
+            (s.collapsedBags && s.collapsedBags[bag.id]) ? null : React.createElement('div', { className: 'bp-grid', style: { gridTemplateColumns: 'repeat(' + Math.min(bag.cols, cols) + ', 80px)' } }, gridCells))
         })
         body = blocks.length ? React.createElement('div', null, blocks) : React.createElement('div', { style: { color: '#7a7262', fontSize: 12, padding: 16 } }, '没有袋子')
       }
