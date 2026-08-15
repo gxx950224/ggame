@@ -65,6 +65,16 @@ DeepSeek Harness 常驻插件：魔兽世界风格的物品栏 / 背包系统。
 
 > 若你的 profile 已启用其他 bundle（如 vision-toolkit），把 `@ggame/backpack` 追加进 `bundles` 列表即可，互不影响。
 
+## 截图
+
+| 背包面板 | 物品查看（Markdown 详情） |
+|---|---|
+| ![背包面板](../../docs/screenshots/背包面板.png) | ![物品详情](../../docs/screenshots/物品详情.png) |
+
+| 费用明细（悬浮金额卡片） | 添加物品 |
+|---|---|
+| ![费用统计](../../docs/screenshots/费用统计.png) | ![添加物品](../../docs/screenshots/添加物品.png) |
+
 ## 使用
 
 | 操作 | 方式 |

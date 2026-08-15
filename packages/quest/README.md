@@ -19,6 +19,16 @@ DeepSeek Harness 常驻插件：仿魔兽世界任务系统。按 `L` 打开任�
 - 🤖 **Agent 联动**：`quest_add` / `quest_update` / `quest_complete` / `quest_progress` / `quest_list`
 - 💾 数据持久化到 `~/.dsh/quest-state.json`（可在设置中修改路径）
 
+## 截图
+
+| 任务面板（看板 + 状态筛选） | 任务详情（列表 + 详情并排） |
+|---|---|
+| ![任务面板](../../docs/screenshots/任务面板.png) | ![任务详情](../../docs/screenshots/任务详情.png) |
+
+| 任务追踪条（右侧常驻） |
+|---|
+| ![任务追踪条](../../docs/screenshots/任务追踪条.png) |
+
 ## 环境要求
 
 - DeepSeek Harness（`dsh`），Web profile

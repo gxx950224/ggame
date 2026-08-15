@@ -1,6 +1,14 @@
 # DSH 插件整合包（ggame）
 
+![主页总览](docs/screenshots/主页总览.png)
+
 DeepSeek Harness 插件集合（monorepo）：背包、任务等单体插件。既可安装**整合包**，也可**单独安装**某个单体插件。
+
+## 截图预览
+
+| 背包 | 任务 |
+|---|---|
+| ![背包面板](docs/screenshots/背包面板.png) | ![任务面板](docs/screenshots/任务面板.png) |
 
 ## 组成
 
