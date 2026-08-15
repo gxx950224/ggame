@@ -25,8 +25,8 @@ const IMAGE_EXT = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp', '.i
 const TEXT_EXT = ['.txt', '.md', '.markdown', '.json', '.js', '.mjs', '.cjs', '.ts', '.tsx', '.jsx', '.yml', '.yaml', '.toml', '.csv', '.html', '.htm', '.css', '.xml', '.log', '.ini', '.conf', '.sh', '.py', '.java', '.go', '.rs', '.c', '.cpp', '.h', '.sql', '.vue', '.svelte']
 const PACKAGE_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const TYPE_ICON_DIR = join(PACKAGE_ROOT, 'icons')
-// 内置皮肤目录：整合包发布时把背景图命名为 ggame-bg.png 放入此目录（仅整合包自带；单体安装为空则不生效）
-const SKIN_DIR = join(PACKAGE_ROOT, 'skin')
+// 内置皮肤目录：整合包级资源包 @ggame/skin（同级 packages/skin）。整合包安装时自带背景图 → 自动应用；单体安装无该目录 → 无背景图
+const SKIN_DIR = join(PACKAGE_ROOT, '..', 'skin')
 const SKIN_FILES = ['ggame-bg.png', 'ggame-bg.jpg', 'ggame-bg.jpeg', 'ggame-bg.webp']
 
 /** 插件设置：设置 → 插件 → 插件配置 中展示的表单。 */
