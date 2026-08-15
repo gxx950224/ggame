@@ -63,6 +63,7 @@ function apply(ctx) {
     '.qst-input,.qst-select{background:#0f0c0a;border:1px solid #3b352c;color:#e0ddd4;border-radius:6px;padding:6px 10px;font-size:14px;outline:none}' +
     '.qst-input{flex:1;min-width:120px}' +
     '.qst-input:focus,.qst-select:focus{border-color:#6f6857}' +
+    '.qst-input::-webkit-calendar-picker-indicator{filter:invert(.75) sepia(1) saturate(2) hue-rotate(5deg);cursor:pointer;opacity:.9}' +
     '.qst-btn-sm{background:#221d16;border:1px solid #443d31;color:#d3cec2;border-radius:6px;padding:4px 10px;font-size:13px;cursor:pointer;white-space:nowrap}' +
     '.qst-btn-sm:hover{border-color:#6f6857;color:#efe9da}' +
     '.qst-btn-sm:disabled{opacity:.45;cursor:not-allowed}' +
@@ -485,7 +486,7 @@ function apply(ctx) {
         React.createElement('span', null, '平均耗时 ', React.createElement('b', null, avgDurH + 'h')),
         React.createElement('span', null, '超期率 ', React.createElement('b', null, overduePct + '%'))),
       React.createElement('div', { className: 'qst-side-sep' }),
-      rows.map((r) => React.createElement('div', { key: r.id, className: 'qst-side-item' + (s.cat === r.id ? ' active' : ''), onClick: () => patch({ cat: r.id, selected: null }), onContextMenu: (e) => { if (r.id === 'all') return; e.preventDefault(); patch({ menu: { kind: 'delcat', name: r.id } }) } },
+      rows.map((r) => React.createElement('div', { key: r.id, className: 'qst-side-item' + (s.cat === r.id ? ' active' : ''), onClick: () => patch({ cat: r.id, selected: null }), onContextMenu: (e) => { if (r.id === 'all') return; e.preventDefault(); patch({ menu: { kind: 'delcat', name: r.id, x: e.clientX, y: e.clientY } }) } },
         Icon(r.icon, s.cat === r.id ? '#c7b68c' : '#a49c8c', 12), r.label, React.createElement('span', { className: 'cnt' }, String(r.count)))),
       React.createElement('div', { key: 'add', className: 'qst-side-add', onClick: () => { if (!adding) setAdding(true) } },
         adding
@@ -566,7 +567,8 @@ function apply(ctx) {
           q.status !== 'completed'
             ? React.createElement('button', { className: 'qst-btn-sm primary', disabled: !canComplete(q), title: canComplete(q) ? '标记完成' : '还有目标未完成', onClick: () => setStatus(q.id, 'completed') }, '完成')
             : null,
-          React.createElement('button', { className: 'qst-btn-sm', onClick: () => sendForProcessing(q) }, '发送对话'),
+          // 已完成的任务隐藏「发送对话」
+          q.status !== 'completed' ? React.createElement('button', { className: 'qst-btn-sm', onClick: () => sendForProcessing(q) }, '发送对话') : null,
         ),
         React.createElement('div', { className: 'qst-actions-row secondary' },
           React.createElement('button', { className: 'qst-btn-sm', onClick: () => patch({ modal: { kind: 'form', id: q.id } }) }, '编辑'),
@@ -617,11 +619,9 @@ function apply(ctx) {
         React.createElement('span', { style: { fontSize: 11, color: '#a49c8c' } }, '重复任务完成后自动重置到下一周期'),
       ),
       React.createElement('div', { className: 'qst-field' }, React.createElement('label', null, '描述'), React.createElement('textarea', { className: 'qst-ta', value: description, onChange: (e) => setDescription(e.target.value) })),
-      React.createElement('div', { className: 'qst-field' }, React.createElement('label', null, '目标（文本 + 目标数量 + 当前进度）'),
+      React.createElement('div', { className: 'qst-field' }, React.createElement('label', null, '目标（只填内容即可，进度默认 0/1，之后在详情里 +1 推进）'),
         objectives.map((o, i) => React.createElement('div', { key: o.id, className: 'qst-obj-edit' },
           React.createElement('input', { className: 'qst-input', value: o.text, placeholder: '目标内容', onChange: (e) => setObjectives(objectives.map((x, j) => (j === i ? Object.assign({}, x, { text: e.target.value }) : x))) }),
-          React.createElement('input', { className: 'qst-input num', type: 'number', min: 1, value: String(o.target), onChange: (e) => setObjectives(objectives.map((x, j) => (j === i ? Object.assign({}, x, { target: Math.max(1, Number(e.target.value) || 1) }) : x))) }),
-          React.createElement('input', { className: 'qst-input num', type: 'number', min: 0, value: String(o.current), onChange: (e) => setObjectives(objectives.map((x, j) => (j === i ? Object.assign({}, x, { current: Math.max(0, Number(e.target.value) || 0) }) : x))) }),
           React.createElement('button', { className: 'del', onClick: () => setObjectives(objectives.filter((x, j) => j !== i)) }, '✕'),
         )),
         React.createElement('button', { className: 'qst-btn-sm', onClick: () => setObjectives(objectives.concat([{ id: 'o' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), text: '', target: 1, current: 0 }])) }, '＋ 目标'),
@@ -704,9 +704,10 @@ function apply(ctx) {
       if (!q) return null
       rows = [
         { label: '打开详情', fn: () => { close(); patch({ selected: q.id }) } },
-        { label: '发送对话（Agent 处理）', icon: 'scroll', fn: () => { close(); sendForProcessing(q) } },
+        // 已完成的任务隐藏「发送对话」与「完成」
+        q.status !== 'completed' ? { label: '发送对话（Agent 处理）', icon: 'scroll', fn: () => { close(); sendForProcessing(q) } } : null,
         { label: q.status === 'tracked' ? '取消追踪' : '追踪任务', fn: () => { close(); toggleTrack(q.id) } },
-        { label: '完成', fn: () => { close(); setStatus(q.id, 'completed') } },
+        q.status !== 'completed' ? { label: '完成', fn: () => { close(); setStatus(q.id, 'completed') } } : null,
         { label: '编辑', fn: () => { close(); patch({ modal: { kind: 'form', id: q.id } }) } },
         'sep',
         { label: '删除', danger: true, fn: () => { close(); patch({ modal: { kind: 'del', id: q.id } }) } },
@@ -717,8 +718,8 @@ function apply(ctx) {
     const w = typeof window !== 'undefined' ? window.innerWidth : 1200
     const h = typeof window !== 'undefined' ? window.innerHeight : 800
     return React.createElement('div', { className: 'qst-menu-backdrop', onMouseDown: close, onContextMenu: (e) => { e.preventDefault(); close() } },
-      React.createElement('div', { className: 'qst-menu', style: { left: Math.max(4, Math.min(m.x || 0, w - 220)), top: Math.max(4, Math.min(m.y || 0, h - rows.length * 30 - 20)) }, onMouseDown: (e) => e.stopPropagation() },
-        rows.map((r, i) => r === 'sep'
+      React.createElement('div', { className: 'qst-menu', style: { left: Math.max(4, Math.min(m.x || 0, w - 220)), top: Math.max(4, Math.min(m.y || 0, h - rows.filter(Boolean).length * 30 - 20)) }, onMouseDown: (e) => e.stopPropagation() },
+        rows.filter(Boolean).map((r, i) => r === 'sep'
           ? React.createElement('div', { key: i, className: 'qst-menu-sep' })
           : React.createElement('div', { key: i, className: 'qst-menu-item' + (r.danger ? ' danger' : ''), onClick: r.fn }, Icon(r.icon || 'flag', r.danger ? '#ff6b5e' : '#c7b68c', 13), r.label))),
     )

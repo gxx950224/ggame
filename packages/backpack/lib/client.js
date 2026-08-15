@@ -195,7 +195,7 @@ function apply(ctx) {
       const res = await rpc('get-state')
       if (res && res.ok && res.data) patch({ data: res.data, money: res.data.money || { gold: 0, silver: 0, copper: 0 }, loading: false })
       else patch({ loading: false, toast: { text: '背包加载失败: ' + ((res && res.error) || ''), seq: Date.now() } })
-      rpc('get-usage').then((ur) => { if (ur && ur.session) patch({ usage: { session: ur.session, log: ur.log || [], models: ur.models || {}, totals: ur.totals || {} } }) })
+      rpc('get-usage').then((ur) => { if (ur && ur.session) patch({ usage: { session: ur.session, log: ur.log || [], models: ur.models || {}, totals: ur.totals || {}, days: ur.days || [] } }) })
     }
     function commit(nextData, toastText) {
       patch({ data: nextData })
@@ -206,7 +206,7 @@ function apply(ctx) {
           patch({ savedAt: Date.now(), saveFailed: false })
           if (toastText) toast(toastText, 'success')
           rpc('get-money').then((mr) => { if (mr && mr.money) patch({ money: mr.money }) })
-          rpc('get-usage').then((ur) => { if (ur && ur.session) patch({ usage: { session: ur.session, log: ur.log || [], models: ur.models || {}, totals: ur.totals || {} } }) })
+          rpc('get-usage').then((ur) => { if (ur && ur.session) patch({ usage: { session: ur.session, log: ur.log || [], models: ur.models || {}, totals: ur.totals || {}, days: ur.days || [] } }) })
         }
       })
     }
@@ -974,42 +974,37 @@ function apply(ctx) {
       )
     }
 
-    // B3 费用可视化：每日趋势 + 模型占比
+    // B3 费用明细：近 7 天每天总花费（元）+ 每个模型花费（元）
     function UsageModal() {
       const [u, setU] = React.useState(null)
       React.useEffect(() => { rpc('get-usage').then((ur) => { if (ur && ur.ok) setU(ur) }) }, [])
       const close = () => patch({ modal: null })
-      const dayKey = (ts) => { const d = new Date(ts); const p = (n) => (n < 10 ? '0' : '') + n; return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) }
-      const days = {}
-      const log = (u && u.log) || []
-      log.forEach((e) => { const k = dayKey(e.ts || Date.now()); days[k] = (days[k] || 0) + (e.costCu || 0) })
-      const dayList = Object.keys(days).sort().reverse().slice(0, 14)
+      const days = (u && Array.isArray(u.days)) ? u.days : []
+      const dayMax = Math.max(1, ...days.map((d) => d.costCu || 0))
       const models = (u && u.models) || {}
-      const modelList = Object.keys(models).sort()
-      const modelMax = Math.max(1, ...modelList.map((m) => (models[m].input || 0) + (models[m].hit || 0) + (models[m].output || 0)))
-      const totals = (u && u.totals) || { input: 0, output: 0, hit: 0 }
-      return React.createElement(ModalShell, { title: '费用统计', onClose: close },
-        React.createElement('div', { className: 'bp-pre', style: { maxHeight: '60vh' } },
-          React.createElement('div', { style: { fontSize: 12, color: '#c7b68c', marginBottom: 8 } }, '累计：输入 ' + totals.input + ' · 输出 ' + totals.output + ' · 缓存命中 ' + totals.hit + ' tokens'),
-          React.createElement('div', { style: { fontSize: 12, color: '#a49c8c', marginBottom: 6 } }, '近 14 天每日花费（铜币）：'),
-          dayList.length === 0 ? React.createElement('div', { style: { color: '#7a7262' } }, '暂无明细') : dayList.map((k) => {
-            const v = days[k]
-            return React.createElement('div', { key: k, style: { display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 } },
-              React.createElement('span', { style: { width: 88, fontSize: 11, color: '#9a9386' } }, k),
-              React.createElement('div', { style: { flex: 1, height: 14, background: '#0f0c0a', borderRadius: 3, overflow: 'hidden' } },
-                React.createElement('div', { style: { width: Math.min(100, Math.round(v / Math.max(1, Math.max(...dayList.map((x) => days[x]))) * 100)) + '%', height: '100%', background: '#c7b68c' } })),
-              React.createElement('span', { style: { width: 70, fontSize: 11, textAlign: 'right', color: '#d8b558' } }, (v / 100).toFixed(2) + ' 元'))
-          }),
-          React.createElement('div', { style: { fontSize: 12, color: '#a49c8c', margin: '10px 0 6px' } }, '模型占比（tokens）：'),
-          modelList.length === 0 ? React.createElement('div', { style: { color: '#7a7262' } }, '暂无模型数据') : modelList.map((m) => {
-            const mm = models[m]
-            const total = (mm.input || 0) + (mm.hit || 0) + (mm.output || 0)
-            return React.createElement('div', { key: m, style: { display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 } },
-              React.createElement('span', { style: { width: 150, fontSize: 11, color: '#9a9386', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, m),
-              React.createElement('div', { style: { flex: 1, height: 14, background: '#0f0c0a', borderRadius: 3, overflow: 'hidden' } },
-                React.createElement('div', { style: { width: Math.min(100, Math.round(total / modelMax * 100)) + '%', height: '100%', background: '#0070dd' } })),
-              React.createElement('span', { style: { width: 130, fontSize: 11, textAlign: 'right', color: '#b9b4a8' } }, '输入 ' + (mm.input || 0) + ' · 命中 ' + (mm.hit || 0)))
-          })),
+      const modelList = Object.keys(models).map((m) => ({ name: m, costCu: models[m].costCu || 0 })).filter((m) => m.costCu > 0).sort((a, b) => b.costCu - a.costCu)
+      const modelMax = Math.max(1, ...modelList.map((m) => m.costCu))
+      const totalCu = modelList.reduce((s, m) => s + m.costCu, 0)
+      const yuan = (cu) => (cu / 10000).toFixed(2)
+      return React.createElement(ModalShell, { title: '费用明细', onClose: close },
+        React.createElement('div', { style: { fontSize: 12, color: '#c7b68c', marginBottom: 8 } }, '累计花费 ' + yuan(totalCu) + ' 元'),
+        React.createElement('div', { style: { fontSize: 12, color: '#a49c8c', marginBottom: 6 } }, '近 7 天每天总花费（元）：'),
+        days.length === 0 ? React.createElement('div', { style: { color: '#7a7262' } }, '暂无明细') : days.map((d) => {
+          const v = d.costCu || 0
+          return React.createElement('div', { key: d.date, style: { display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 } },
+            React.createElement('span', { style: { width: 88, fontSize: 11, color: '#9a9386' } }, d.date),
+            React.createElement('div', { style: { flex: 1, height: 14, background: '#0f0c0a', borderRadius: 3, overflow: 'hidden' } },
+              React.createElement('div', { style: { width: Math.min(100, Math.round(v / dayMax * 100)) + '%', height: '100%', background: '#c7b68c' } })),
+            React.createElement('span', { style: { width: 70, fontSize: 11, textAlign: 'right', color: '#d8b558' } }, yuan(v) + ' 元'))
+        }),
+        React.createElement('div', { style: { fontSize: 12, color: '#a49c8c', margin: '10px 0 6px' } }, '每个模型花费（元）：'),
+        modelList.length === 0 ? React.createElement('div', { style: { color: '#7a7262' } }, '暂无模型数据') : modelList.map((m) =>
+          React.createElement('div', { key: m.name, style: { display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 } },
+            React.createElement('span', { style: { width: 150, fontSize: 11, color: '#9a9386', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, m.name),
+            React.createElement('div', { style: { flex: 1, height: 14, background: '#0f0c0a', borderRadius: 3, overflow: 'hidden' } },
+              React.createElement('div', { style: { width: Math.min(100, Math.round(m.costCu / modelMax * 100)) + '%', height: '100%', background: '#0070dd' } })),
+            React.createElement('span', { style: { width: 80, fontSize: 11, textAlign: 'right', color: '#b9b4a8' } }, yuan(m.costCu) + ' 元'))
+        ),
       )
     }
 
@@ -1124,8 +1119,6 @@ function apply(ctx) {
       const totalUse = d.items.reduce((n, i) => n + (i.useCount || 0), 0)
       const favN = d.items.filter((i) => i.fav).length
       const money = s.money || { gold: 0, silver: 0, copper: 0 }
-      const sess = (s.usage && s.usage.session) || { input: 0, output: 0, hit: 0 }
-      const totals = (s.usage && s.usage.totals) || { input: 0, output: 0, hit: 0 }
       return React.createElement('div', Object.assign({
         className: 'bp-panel',
         ref: ref,
@@ -1171,11 +1164,10 @@ function apply(ctx) {
           s.saveFailed
             ? React.createElement('span', { style: { color: '#ff6b5e', fontSize: 12 } }, '⚠ 保存失败')
             : (s.savedAt ? React.createElement('span', { style: { color: '#a49c8c', fontSize: 12 } }, '已保存 ' + (new Date(s.savedAt).getHours() < 10 ? '0' : '') + new Date(s.savedAt).getHours() + ':' + (new Date(s.savedAt).getMinutes() < 10 ? '0' : '') + new Date(s.savedAt).getMinutes()) : null),
-          React.createElement('span', { style: { marginLeft: 'auto', display: 'flex', gap: 12, alignItems: 'center' }, title: '费用统计（DeepSeek 动态定价·累计全部会话与全部模型）：金币=元，银币=角，铜币=分 · 累计 输入 ' + totals.input + ' · 输出 ' + totals.output + ' · 缓存命中 ' + totals.hit + ' tokens · 本会话 输入 ' + sess.input + ' 输出 ' + sess.output },
+          React.createElement('span', { style: { marginLeft: 'auto', display: 'flex', gap: 12, alignItems: 'center', cursor: 'pointer' }, title: '点击/悬浮打开费用明细（每个模型花费 + 近 7 天每天总花费）', onMouseEnter: () => patch({ modal: { kind: 'usage' } }) },
             React.createElement('span', { style: { display: 'flex', alignItems: 'center', gap: 4 } }, React.createElement('b', null, String(money.gold)), React.createElement('img', { src: '/_dsh/backpack/media?p=' + enc(TYPE_ICON_DIR + '/金币.png'), style: { width: 16, height: 16 } })),
             React.createElement('span', { style: { display: 'flex', alignItems: 'center', gap: 4 } }, React.createElement('b', null, String(money.silver)), React.createElement('img', { src: '/_dsh/backpack/media?p=' + enc(TYPE_ICON_DIR + '/银币.png'), style: { width: 16, height: 16 } })),
             React.createElement('span', { style: { display: 'flex', alignItems: 'center', gap: 4 } }, React.createElement('b', null, String(money.copper)), React.createElement('img', { src: '/_dsh/backpack/media?p=' + enc(TYPE_ICON_DIR + '/铜币.png'), style: { width: 16, height: 16 } })),
-            React.createElement('button', { className: 'bp-btn', style: { padding: '1px 8px', fontSize: 12 }, title: '费用详情（每日趋势 + 模型占比）', onClick: () => patch({ modal: { kind: 'usage' } }) }, '📊'),
           ),
         ),
       )

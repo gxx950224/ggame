@@ -102,6 +102,8 @@ export async function apply(ctx, config = {}) {
   let sessionUsage = { input: 0, output: 0, hit: 0 }
   let totalUsage = { input: 0, output: 0, hit: 0 }
   let modelUsage = {}
+  let modelCostCu = {}
+  let dayCostCu = {}
   let scanState = {}
   let scanBusy = false
   let statePath = ''
@@ -126,6 +128,8 @@ export async function apply(ctx, config = {}) {
       usageLog: [],
       totalUsage: { input: 0, output: 0, hit: 0 },
       modelUsage: {},
+      modelCostCu: {},
+      dayCostCu: {},
       scanState: {},
       bags: [
         { id: 'bag-main', name: '主背包', cols: 6, rows: 4, order: 0, fixed: true },
@@ -228,7 +232,21 @@ export async function apply(ctx, config = {}) {
     if (plainObj(raw.scanState)) {
       Object.keys(raw.scanState).slice(0, 200).forEach((k) => { const v = Number(raw.scanState[k]); if (isFinite(v)) scanState[String(k).slice(0, 128)] = Math.max(0, Math.floor(v)) })
     }
-    return { version: 1, tags: tags, money: moneyOf(raw.money), usageLog: usageLog, totalUsage: totalUsage, modelUsage: modelUsage, scanState: scanState, bags: bags, items: items }
+    const modelCostCu = {}
+    if (plainObj(raw.modelCostCu)) {
+      Object.keys(raw.modelCostCu).slice(0, 40).forEach((k) => { const v = Number(raw.modelCostCu[k]); if (isFinite(v)) modelCostCu[String(k).slice(0, 64)] = Math.max(0, Math.round(v)) })
+    }
+    const dayCostCu = {}
+    if (plainObj(raw.dayCostCu)) {
+      Object.keys(raw.dayCostCu).slice(0, 60).forEach((k) => { const v = Number(raw.dayCostCu[k]); if (isFinite(v) && /^\d{4}-\d{2}-\d{2}$/.test(String(k))) dayCostCu[String(k)] = Math.max(0, Math.round(v)) })
+    }
+    return { version: 1, tags: tags, money: moneyOf(raw.money), usageLog: usageLog, totalUsage: totalUsage, modelUsage: modelUsage, modelCostCu: modelCostCu, dayCostCu: dayCostCu, scanState: scanState, bags: bags, items: items }
+  }
+
+  function localDayKey(ts) {
+    const d = new Date(numberOr(ts, Date.now()))
+    const p = (n) => (n < 10 ? '0' : '') + n
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate())
   }
 
   function tallyUsage(u, model, cfg, evTime) {
@@ -242,6 +260,11 @@ export async function apply(ctx, config = {}) {
     const mm = modelUsage[model] || { input: 0, output: 0, hit: 0 }
     mm.input += miss; mm.hit += hit; mm.output += out
     modelUsage[model] = mm
+    // 模型花费（铜币）累计：费用明细按模型展示用
+    modelCostCu[model] = Math.round((modelCostCu[model] || 0) + costCu)
+    // 按自然日累计（本地时区）：近 7 天每日总花费与账本严格一致
+    const dk = localDayKey(evTime)
+    dayCostCu[dk] = Math.round((dayCostCu[dk] || 0) + costCu)
     usageLog.push({ ts: numberOr(evTime, Date.now()), model: model, input: miss, hit: hit, output: out, costCu: costCu })
     // B6 usageLog 归档：超出 500 条的旧明细进归档缓冲区，随持久化追加到归档文件（费用审计不丢）
     if (usageLog.length > 500) {
@@ -304,6 +327,20 @@ export async function apply(ctx, config = {}) {
         usageLog = data.usageLog
         totalUsage = data.totalUsage
         modelUsage = data.modelUsage
+        modelCostCu = data.modelCostCu || {}
+        // 旧状态无 modelCostCu 时，从保留的 usageLog 按模型回填（近 500 条近似）
+        if (Object.keys(modelCostCu).length === 0 && usageLog.length) {
+          const m = {}
+          usageLog.forEach((e) => { if (e && e.model) m[e.model] = Math.round((m[e.model] || 0) + (e.costCu || 0)) })
+          modelCostCu = m
+        }
+        dayCostCu = data.dayCostCu || {}
+        // 旧状态无 dayCostCu 时，从保留的 usageLog 按自然日回填（近 500 条近似）
+        if (Object.keys(dayCostCu).length === 0 && usageLog.length) {
+          const d = {}
+          usageLog.forEach((e) => { if (e && e.ts) { const k = localDayKey(e.ts); d[k] = Math.round((d[k] || 0) + (e.costCu || 0)) } })
+          dayCostCu = d
+        }
         scanState = data.scanState
         await rebuildAllowed()
         activePath = statePath
@@ -316,6 +353,8 @@ export async function apply(ctx, config = {}) {
     usageLog = data.usageLog
     totalUsage = data.totalUsage
     modelUsage = data.modelUsage
+    modelCostCu = data.modelCostCu || {}
+    dayCostCu = data.dayCostCu || {}
     scanState = data.scanState
     await rebuildAllowed()
     await persist()
@@ -337,6 +376,11 @@ export async function apply(ctx, config = {}) {
         data.usageLog = usageLog
         data.totalUsage = totalUsage
         data.modelUsage = modelUsage
+        data.modelCostCu = modelCostCu
+        // 剪枝：只保留近 30 天的日账本（yyyy-mm-dd 字典序可直接比较）
+        const dayCut = localDayKey(Date.now() - 30 * 86400000)
+        Object.keys(dayCostCu).forEach((k) => { if (k < dayCut) delete dayCostCu[k] })
+        data.dayCostCu = dayCostCu
         data.scanState = scanState
         const tmp = target + '.tmp-' + Date.now()
         await fsp.writeFile(tmp, JSON.stringify(data), 'utf8')
@@ -397,6 +441,8 @@ export async function apply(ctx, config = {}) {
         money = { gold: 0, silver: 0, copper: 0 }
         totalUsage = { input: 0, output: 0, hit: 0 }
         modelUsage = {}
+        modelCostCu = {}
+        dayCostCu = {}
         usageLog = []
         // 清空按会话的 seq 游标，让全量回填重算（同时清掉旧 __priceRev）
         const next = {}
@@ -636,7 +682,20 @@ export async function apply(ctx, config = {}) {
       }
       case 'get-usage': {
         await ensureLoaded()
-        return { ok: true, session: Object.assign({}, sessionUsage), totals: Object.assign({}, totalUsage), models: modelUsage, log: usageLog.slice(-50) }
+        // 每个模型的累计花费（铜币），并入模型清单
+        const models = {}
+        Object.keys(modelUsage).forEach((m) => {
+          const src = modelUsage[m] || {}
+          models[m] = { input: src.input || 0, hit: src.hit || 0, output: src.output || 0, costCu: modelCostCu[m] || 0 }
+        })
+        // 近 7 个自然日（含今天）每天总花费（铜币）：直接取账本 dayCostCu，与 money/modelCostCu 严格一致
+        const nowMs = Date.now()
+        const days = []
+        for (let i = 6; i >= 0; i--) {
+          const k = localDayKey(nowMs - i * 86400000)
+          days.push({ date: k, costCu: dayCostCu[k] || 0 })
+        }
+        return { ok: true, session: Object.assign({}, sessionUsage), totals: Object.assign({}, totalUsage), models: models, days: days, log: usageLog.slice(-50) }
       }
       case 'scan-now': {
         await ensureLoaded()

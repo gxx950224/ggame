@@ -29,7 +29,7 @@ export const PEAK_PRICES = {
 export const PEAK_EFFECTIVE_MS = Date.UTC(2026, 7, 16, 16, 0, 0) // 2026-08-17 00:00 北京时间
 
 /** 定价规则修订号：修改定价/规则后 +1，触发一次全量重建账本 */
-export const PRICE_REV = 'v4-scan-all-20260815'
+export const PRICE_REV = 'v5-dayledger-20260815'
 
 /**
  * 归一化货币（1 金 = 100 银 = 10000 铜），负值归零。
