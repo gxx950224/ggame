@@ -636,7 +636,7 @@ function apply(ctx) {
         TEMPLATES.map((tp) => React.createElement('button', { key: tp.label, className: 'qst-btn-sm', style: { marginLeft: 4 }, onClick: tp.apply }, tp.label))),
       React.createElement('div', { className: 'qst-field' }, React.createElement('label', null, '标题'), React.createElement('input', { className: 'qst-input in', value: title, onChange: (e) => setTitle(e.target.value) })),
       React.createElement('div', { className: 'row' },
-        React.createElement('select', { className: 'qst-select', value: String(level), onChange: (e) => setLevel(Number(e.target.value)) }, LEVELS.map((l) => React.createElement('option', { key: l.id, value: String(l.id) }, l.label + ' (' + l.id + '级)'))),
+        React.createElement('select', { className: 'qst-select', value: String(level), onChange: (e) => setLevel(Number(e.target.value)) }, LEVELS.map((l) => React.createElement('option', { key: l.id, value: String(l.id) }, l.label))),
         React.createElement('select', { className: 'qst-select grow', value: category, onChange: (e) => setCategory(e.target.value) }, (d ? d.categories : []).map((c) => React.createElement('option', { key: c, value: c }, c))),
         React.createElement('select', { className: 'qst-select', value: status, onChange: (e) => setStatus(e.target.value) }, STATUS_ORDER.map((st) => React.createElement('option', { key: st, value: st }, STATUSES[st].label))),
       ),
