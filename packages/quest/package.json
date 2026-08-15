@@ -1,0 +1,57 @@
+{
+  "name": "@ggame/quest",
+  "version": "1.0.0",
+  "description": "DSH 任务插件：仿魔兽世界任务系统——任务面板（L 键）、总体任务看板、任务追踪条、任务维护与 Agent 联动。",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "src",
+    "scripts",
+    "icons",
+    "tests",
+    "cordis.patch.yml"
+  ],
+  "scripts": {
+    "build": "node scripts/build-client.mjs",
+    "test": "node tests/quest.test.mjs",
+    "check": "node --check lib/index.js && node --check lib/client.js"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-client-runtime",
+        "@deepseek-ai/dsh-client-ui-layout",
+        "@deepseek-ai/dsh-client-ui-conversation",
+        "@deepseek-ai/dsh-client-ui-slots"
+      ],
+      "platform": "web"
+    }
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.1",
+    "@deepseek-ai/dsh-settings": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-tools": "^0.1.0-rc.6",
+    "@deepseek-ai/schemastery": "^3.18.1",
+    "react": "^18.2.0"
+  },
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "plugin",
+    "quest",
+    "task",
+    "wow",
+    "tracker"
+  ],
+  "license": "MIT"
+}

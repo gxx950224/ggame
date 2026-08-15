@@ -1,0 +1,18 @@
+# dependencies / build
+node_modules/
+pnpm-lock.yaml
+*.log
+
+# dev scratch (原动态插件开发目录，不入库)
+.backpack-dev/
+.dsh-vision-toolkit/
+
+# runtime state
+backpack-state.json*
+*.tmp-*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
