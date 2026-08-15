@@ -14,9 +14,6 @@ importers:
       '@ggame/quest':
         specifier: workspace:*
         version: link:packages/quest
-      '@ggame/skin':
-        specifier: workspace:*
-        version: link:packages/skin
 
   packages/backpack:
     dependencies:
@@ -53,8 +50,6 @@ importers:
       react:
         specifier: ^18.2.0
         version: 18.3.1
-
-  packages/skin: {}
 
   packages/ui-core: {}
 

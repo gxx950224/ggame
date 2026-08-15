@@ -25,9 +25,6 @@ const IMAGE_EXT = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp', '.i
 const TEXT_EXT = ['.txt', '.md', '.markdown', '.json', '.js', '.mjs', '.cjs', '.ts', '.tsx', '.jsx', '.yml', '.yaml', '.toml', '.csv', '.html', '.htm', '.css', '.xml', '.log', '.ini', '.conf', '.sh', '.py', '.java', '.go', '.rs', '.c', '.cpp', '.h', '.sql', '.vue', '.svelte']
 const PACKAGE_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const TYPE_ICON_DIR = join(PACKAGE_ROOT, 'icons')
-// 内置皮肤目录：整合包级资源包 @ggame/skin（同级 packages/skin）。整合包安装时自带背景图 → 自动应用；单体安装无该目录 → 无背景图
-const SKIN_DIR = join(PACKAGE_ROOT, '..', 'skin')
-const SKIN_FILES = ['ggame-bg.png', 'ggame-bg.jpg', 'ggame-bg.jpeg', 'ggame-bg.webp']
 
 /** 插件设置：设置 → 插件 → 插件配置 中展示的表单。 */
 export const Config = z.object({
@@ -51,8 +48,6 @@ export const Config = z.object({
     miss: z.number(),
     out: z.number(),
   })).default({}),
-  /** 皮肤：DSH 网页背景图（本地图片路径或 http(s) URL，留空则用默认深色背景）。 */
-  backgroundImage: z.string().default(''),
 }).default({})
 
 export function resolveConfig(config = {}) {
@@ -415,10 +410,6 @@ export async function apply(ctx, config = {}) {
       const entries = await fsp.readdir(TYPE_ICON_DIR)
       entries.forEach((e) => { if (/\.png$/i.test(e)) mediaAllowed.add(normPath(join(TYPE_ICON_DIR, e))) })
     } catch (e) { /* icons dir unavailable */ }
-    // 皮肤背景图路径放行（内置 skin 目录 + 用户配置的本地路径）
-    for (const f of SKIN_FILES) { try { const st = await fsp.stat(join(SKIN_DIR, f)); if (st && st.size > 0) mediaAllowed.add(normPath(join(SKIN_DIR, f))) } catch (e) { /* not present */ } }
-    const bg = String(resolveConfig(settings.get()).backgroundImage || '').trim()
-    if (/^(?:[A-Za-z]:[\\/]|~[\\/]|[\\/]|\.{1,2}[\\/])/.test(bg)) mediaAllowed.add(normPath(bg))
     if (!data) return
     data.items.forEach((it) => {
       const p = String(it.payload || '')
@@ -596,17 +587,6 @@ export async function apply(ctx, config = {}) {
   // ── Web API：浏览器客户端通过 fetch 调用（与动态版 host.call 一一对应） ──
   async function dispatch(method, args) {
     switch (method) {
-      case 'get-config': {
-        // 皮肤：用户配置的 backgroundImage 优先；否则若整合包内置皮肤图存在则用它（单体安装无图 → 空）
-        const cfg = resolveConfig(settings.get())
-        let bg = String(cfg.backgroundImage || '').trim()
-        if (!bg) {
-          for (const f of SKIN_FILES) {
-            try { const st = await fsp.stat(join(SKIN_DIR, f)); if (st && st.size > 0) { bg = join(SKIN_DIR, f); break } } catch (e) { /* not present */ }
-          }
-        }
-        return { ok: true, config: { backgroundImage: bg } }
-      }
       case 'get-state': {
         await ensureLoaded()
         return { ok: true, data: data, diag: diag, scan: scanDiag }

@@ -190,59 +190,6 @@ function apply(ctx) {
       return s
     }
     const rpc = (method, args) => fetch('/_dsh/backpack/api', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ method: method, args: args || null }), credentials: 'same-origin' }).then((r) => r.json()).catch((e) => ({ ok: false, error: String((e && e.message) || e) }))
-    // 皮肤：背景图铺在 body，把 DSH 布局层容器（主框架/侧栏/内容区）改为半透明浅色雾（50% 透出背景图，全屏可见），文字保持浅色主题深色 → 可读
-    function skinCover() {
-      // 覆盖"布局层"容器：宽 ≥15% 视口 且 高 ≥50% 视口 的不透明背景容器（覆盖主框架与侧栏；输入框/小卡片保留自身背景）
-      try {
-        const vw = window.innerWidth, vh = window.innerHeight
-        const queue = [document.body]
-        let seen = 0
-        for (let i = 0; i < queue.length && seen < 600; i++) {
-          const el = queue[i]
-          for (const c of el.children) {
-            if (!c || typeof c.getBoundingClientRect !== 'function') continue
-            seen++
-            if (c.children && c.children.length) queue.push(c)
-            const r = c.getBoundingClientRect()
-            if (r.width >= vw * 0.15 && r.height >= vh * 0.5) {
-              const s = getComputedStyle(c)
-              if (s.backgroundColor && s.backgroundColor !== 'rgba(0, 0, 0, 0)' && s.backgroundColor !== 'transparent') {
-                c.setAttribute('data-ggame-skin', '1')
-                // 50% 图片不透明度：白雾 alpha 0.5（图清晰透出，不模糊）
-                c.style.setProperty('background-color', 'rgba(250, 250, 248, 0.5)', 'important')
-              }
-            }
-          }
-        }
-      } catch (e) { /* ignore */ }
-    }
-    function skinRestore() {
-      try {
-        document.querySelectorAll('[data-ggame-skin]').forEach((el) => {
-          try { el.style.removeProperty('background-color') } catch (e) { /* ignore */ }
-          el.removeAttribute('data-ggame-skin')
-        })
-        document.body.style.background = ''
-      } catch (e) { /* ignore */ }
-    }
-    function applySkin() {
-      try {
-        rpc('get-config').then((res) => {
-          try {
-            const root = document && document.documentElement
-            const bg = res && res.ok ? String((res.config && res.config.backgroundImage) || '').trim() : ''
-            if (!bg || !document || !document.body || !root) { skinRestore(); return }
-            const src = /^https?:\/\//i.test(bg) ? bg : '/_dsh/backpack/media?p=' + enc(bg)
-            document.body.style.background = 'rgba(8,6,4,.72) url("' + src + '") no-repeat center/cover fixed'
-            document.body.style.backgroundSize = 'cover'
-            document.body.style.backgroundAttachment = 'fixed'
-            // 全屏浅色容器 → 半透明白雾（文字不变，保持可读）
-            skinCover()
-          } catch (e) { /* ignore */ }
-        })
-      } catch (e) { /* ignore */ }
-    }
-    applySkin()
     function toast(text, type) { patch({ toast: { text: text, type: type || 'info', seq: Date.now() } }) }
     const enc = (s) => (typeof encodeURIComponent === 'function') ? encodeURIComponent(s) : String(s)
     const clamp = (v, lo, hi) => { const n = Math.floor(Number(v)); return isFinite(n) ? Math.max(lo, Math.min(hi, n)) : lo }
