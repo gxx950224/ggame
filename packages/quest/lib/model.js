@@ -57,7 +57,7 @@ export function seed() {
         description: '欢迎来到任务面板！按 L 开合面板，右键任务可操作；左下角卷轴按钮打开追踪条。让 Agent「把 XXX 记成任务」即可联动建任务。',
         objectives: [
           makeObjective({ text: '浏览任务面板', target: 1, current: 0 }),
-          makeObjective({ text: '追踪一个任务', target: 1, current: 0 }),
+          makeObjective({ text: '创建一个新任务', target: 1, current: 0 }),
         ],
         rewards: '经验 +50', order: 0, icon: '', createdAt: now, updatedAt: now,
       },

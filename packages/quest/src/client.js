@@ -61,6 +61,10 @@ function apply(ctx) {
     '.qst-body{overflow-y:auto;overflow-x:hidden;padding:10px;flex:1;display:flex;flex-direction:column}' +
     '.qst-toolbar{display:flex;flex-wrap:wrap;gap:6px;padding:8px 2px;align-items:center;border-bottom:1px solid #332d25;margin-bottom:8px}' +
     '.qst-input,.qst-select{background:#0f0c0a;border:1px solid #3b352c;color:#e0ddd4;border-radius:6px;padding:6px 10px;font-size:14px;outline:none}' +
+    '.qst-filters{display:flex;gap:4px;flex-wrap:wrap}' +
+    '.qst-filter{background:#17130e;border:1px solid #332d25;color:#9a9386;border-radius:12px;padding:3px 10px;font-size:11.5px;cursor:pointer}' +
+    '.qst-filter:hover{border-color:#5a5345;color:#d6d2c8}' +
+    '.qst-filter.on{background:rgba(199,182,140,.16);border-color:#c7b68c;color:#c7b68c}' +
     '.qst-input{flex:1;min-width:120px}' +
     '.qst-input:focus,.qst-select:focus{border-color:#6f6857}' +
     '.qst-input::-webkit-calendar-picker-indicator{filter:invert(.75) sepia(1) saturate(2) hue-rotate(5deg);cursor:pointer;opacity:.9}' +
@@ -142,7 +146,7 @@ function apply(ctx) {
     trackerHidden: (() => { try { return window.localStorage.getItem('ggame-tracker-hidden') === '1' } catch (e) { return false } })(),
     data: null,
     cat: 'all',
-    statusFilter: 'all',
+    statusFilter: ['tracked', 'active'],
     search: '',
     selected: null,
     modal: null,
@@ -393,6 +397,7 @@ function apply(ctx) {
     if (form.id) {
       updateQuest(findQuest(form.id), base)
       toast('任务已保存：' + base.title)
+      patch({ modal: null })
     } else {
       const now = Date.now()
       const quest = Object.assign({}, base, {
@@ -405,14 +410,16 @@ function apply(ctx) {
       })
       const cats = d.categories.indexOf(quest.category) >= 0 ? d.categories : (quest.category ? d.categories.concat([quest.category]) : d.categories)
       commit(Object.assign({}, d, { categories: cats, quests: d.quests.concat([quest]) }), '任务已创建：' + quest.title)
-      patch({ selected: quest.id })
+      patch({ modal: null, selected: quest.id })
     }
   }
 
   function filtered(d, s) {
     let list = d.quests.slice()
     if (s.cat !== 'all') list = list.filter((q) => q.category === s.cat)
-    if (s.statusFilter !== 'all') list = list.filter((q) => q.status === s.statusFilter)
+    // F15 状态多选：statusFilter 为数组，含 'all' 或空数组 = 不过滤
+    const sf = Array.isArray(s.statusFilter) ? s.statusFilter : []
+    if (sf.length && sf.indexOf('all') < 0) list = list.filter((q) => sf.indexOf(q.status) >= 0)
     if (s.search) {
       const t = s.search.toLowerCase()
       list = list.filter((q) => q.title.toLowerCase().indexOf(t) >= 0 || String(q.description || '').toLowerCase().indexOf(t) >= 0 || q.objectives.some((o) => o.text.toLowerCase().indexOf(t) >= 0))
@@ -461,29 +468,34 @@ function apply(ctx) {
     if (!d) return React.createElement('div', { className: 'qst-side' })
     const counts = {}
     d.quests.forEach((q) => { counts[q.category || '未分类'] = (counts[q.category || '未分类'] || 0) + 1 })
+    // 状态统计：进行中 = active+tracked（未完成未放弃），追踪 = tracked，完成 = completed
     const activeN = d.quests.filter((q) => q.status === 'active' || q.status === 'tracked').length
     const trackedN = d.quests.filter((q) => q.status === 'tracked').length
     const doneN = d.quests.filter((q) => q.status === 'completed').length
-    // D6 完成统计：本周完成 / 平均耗时 / 超期率
+    // D6 完成统计：本周完成（自然周，周一 00:00 起）/ 平均耗时 / 超期率
     const now = Date.now()
-    const weekAgo = now - 7 * 86400000
+    const d0 = new Date(now)
+    const weekStart = new Date(d0.getFullYear(), d0.getMonth(), d0.getDate() - ((d0.getDay() + 6) % 7)).getTime()
     const completed = d.quests.filter((q) => q.status === 'completed')
-    const weekDone = completed.filter((q) => (q.completedAt || 0) >= weekAgo).length
-    const avgDurH = completed.length ? Math.round(completed.reduce((s, q) => s + Math.max(0, (q.completedAt || now) - (q.createdAt || now)), 0) / completed.length / 3600000) : 0
+    const weekDone = completed.filter((q) => (q.completedAt || 0) >= weekStart).length
+    const durList = completed.map((q) => (q.completedAt || 0) - (q.createdAt || 0)).filter((v) => v > 0)
+    const avgMs = durList.length ? durList.reduce((s, v) => s + v, 0) / durList.length : 0
+    const avgDurH = Math.round(avgMs / 3600000)
     const overdueN = completed.filter((q) => q.dueAt && q.completedAt && q.completedAt > q.dueAt).length
     const overduePct = completed.length ? Math.round(overdueN / completed.length * 100) : 0
+    const fmtDur = avgMs ? (avgMs >= 48 * 3600000 ? Math.round(avgMs / 86400000) + 'd' : avgDurH + 'h') : '–'
     const rows = []
     rows.push({ id: 'all', label: '全部任务', icon: 'flag', count: d.quests.length })
     d.categories.forEach((c) => rows.push({ id: c, label: c, icon: 'folder', count: counts[c] || 0 }))
     return React.createElement('div', { className: 'qst-side' },
       React.createElement('div', { className: 'qst-side-title' }, '任务看板'),
-      React.createElement('div', { className: 'qst-stat' },
+      React.createElement('div', { className: 'qst-stat', title: '进行中 = 追踪中 + 进行中（未完成）' },
         React.createElement('span', null, '进行中 ', React.createElement('b', null, activeN)),
         React.createElement('span', null, '追踪 ', React.createElement('b', null, trackedN)),
         React.createElement('span', null, '完成 ', React.createElement('b', null, doneN))),
-      React.createElement('div', { className: 'qst-stat' },
+      React.createElement('div', { className: 'qst-stat', title: '本周完成 = 自然周（周一 0 点起）内完成数；平均耗时 = 已完成任务平均用时；超期率 = 已完成但超过到期日的比例' },
         React.createElement('span', null, '本周完成 ', React.createElement('b', null, weekDone)),
-        React.createElement('span', null, '平均耗时 ', React.createElement('b', null, avgDurH + 'h')),
+        React.createElement('span', null, '平均耗时 ', React.createElement('b', null, fmtDur)),
         React.createElement('span', null, '超期率 ', React.createElement('b', null, overduePct + '%'))),
       React.createElement('div', { className: 'qst-side-sep' }),
       rows.map((r) => React.createElement('div', { key: r.id, className: 'qst-side-item' + (s.cat === r.id ? ' active' : ''), onClick: () => patch({ cat: r.id, selected: null }), onContextMenu: (e) => { if (r.id === 'all') return; e.preventDefault(); patch({ menu: { kind: 'delcat', name: r.id, x: e.clientX, y: e.clientY } }) } },
@@ -506,10 +518,22 @@ function apply(ctx) {
     return React.createElement('div', { className: 'qst-body' },
       React.createElement('div', { className: 'qst-toolbar' },
         React.createElement('input', { className: 'qst-input', placeholder: '搜索任务…', value: s.search, onChange: (e) => patch({ search: e.target.value }) }),
-        s.search ? React.createElement('button', { className: 'qst-btn-sm', title: '清除搜索', onClick: () => patch({ search: '', statusFilter: 'all' }) }, '✕') : null,
-        React.createElement('select', { className: 'qst-select', value: s.statusFilter, onChange: (e) => patch({ statusFilter: e.target.value }) },
-          React.createElement('option', { value: 'all' }, '全部状态'),
-          STATUS_ORDER.map((st) => React.createElement('option', { key: st, value: st }, STATUSES[st].label))),
+        s.search ? React.createElement('button', { className: 'qst-btn-sm', title: '清除搜索', onClick: () => patch({ search: '' }) }, '✕') : null,
+        // F15 状态多选：点击切换，默认「追踪中 + 进行中」
+        React.createElement('div', { className: 'qst-filters', title: '状态多选（可多选；「全部」= 不过滤）' },
+          [{ id: 'all', label: '全部' }, { id: 'tracked', label: '追踪中' }, { id: 'active', label: '进行中' }, { id: 'completed', label: '已完成' }, { id: 'abandoned', label: '已放弃' }].map((f) => {
+            const cur = Array.isArray(s.statusFilter) ? s.statusFilter : []
+            const on = cur.indexOf('all') >= 0 ? f.id === 'all' : cur.indexOf(f.id) >= 0
+            return React.createElement('button', { key: f.id, className: 'qst-filter' + (on ? ' on' : ''), onClick: () => {
+              let next
+              if (f.id === 'all') next = ['all']
+              else {
+                const base = cur.indexOf('all') >= 0 ? [] : cur.slice()
+                next = base.indexOf(f.id) >= 0 ? base.filter((x) => x !== f.id) : base.concat([f.id])
+              }
+              patch({ statusFilter: next })
+            } }, f.label)
+          })),
       ),
       list.length === 0
         ? React.createElement('div', { style: { color: '#7a7262', fontSize: 12, padding: 24, textAlign: 'center' } },
@@ -525,7 +549,7 @@ function apply(ctx) {
           return React.createElement('div', { key: q.id, className: 'qst-quest' + (s.selected === q.id ? ' selected' : ''), onClick: () => patch({ selected: s.selected === q.id ? null : q.id }), onContextMenu: (e) => { e.preventDefault(); patch({ menu: { kind: 'quest', id: q.id, x: e.clientX, y: e.clientY } }) } },
             React.createElement('div', { className: 'qhead' },
               React.createElement('span', { className: 'tt', style: { color: lvl.color } }, q.title),
-              React.createElement('span', { className: 'meta' }, st.label + (q.category ? ' · ' + q.category : '') + (s.processing === q.id ? ' ⏳处理中' : ''))),
+              React.createElement('span', { className: 'meta' }, lvl.label + '（' + q.level + '级） · ' + st.label + (q.category ? ' · ' + q.category : '') + (s.processing === q.id ? ' ⏳处理中' : ''))),
             React.createElement('div', { className: 'qobj' }, objText, tl ? React.createElement('span', { style: { color: tl.color, marginLeft: 8, flex: 'none' } }, '⏳ ' + tl.label) : null))
         }))
   }
@@ -539,7 +563,7 @@ function apply(ctx) {
     return React.createElement('div', { className: 'qst-detail' },
       React.createElement('div', { className: 'dt-head' },
         React.createElement('span', { className: 'dt-title', style: { color: lvl.color } }, q.title),
-        React.createElement('span', { style: { fontSize: 12, color: '#a49c8c' } }, st.label + (q.category ? ' · ' + q.category : '') + (q.recur === 'daily' ? ' · 每日' : q.recur === 'weekly' ? ' · 每周' : '')),
+        React.createElement('span', { style: { fontSize: 12, color: '#a49c8c' } }, lvl.label + '（' + q.level + '级） · ' + st.label + (q.category ? ' · ' + q.category : '') + (q.recur === 'daily' ? ' · 每日' : q.recur === 'weekly' ? ' · 每周' : '')),
       ),
       q.description ? React.createElement('div', { className: 'dt-desc' }, q.description) : null,
       React.createElement('div', null,

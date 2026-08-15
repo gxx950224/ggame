@@ -9,6 +9,7 @@ import { defineTool } from '@deepseek-ai/dsh-tools'
 import { settingsNamespace } from '@deepseek-ai/dsh-settings'
 import z from '@deepseek-ai/schemastery'
 import { promises as fsp } from 'node:fs'
+import { spawn } from 'node:child_process'
 import { homedir } from 'node:os'
 import { join, dirname, basename } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -136,7 +137,7 @@ export async function apply(ctx, config = {}) {
         { id: 'bag-vault', name: '虚空仓库', cols: 8, rows: 36, order: 1, vault: true, fixed: true },
       ],
       items: [
-        { id: uid(), bagId: 'bag-main', slot: 0, type: 'note', name: '新手卷轴', rarity: 2, payload: '欢迎来到背包！右键物品可以「使用」，双击执行默认动作；把 Agent 回复里的链接一键「拾取」；直接粘贴内容即可自动识别物品类型。按 B 键开合背包。', flavor: '阅读后绑定', count: 1, createdAt: now, lastUsed: 0, useCount: 0, extra: {}, icon: '' },
+        { id: uid(), bagId: 'bag-main', slot: 0, type: 'note', name: '新手卷轴', rarity: 2, payload: '# 背包使用指南\n\n欢迎来到 **ggame 背包**！这是一份怎么用背包功能的说明。\n\n## 开合与面板\n\n- 右下角 🎒 **背包按钮**或按 `B` 键开合面板；`Esc` 关闭。\n- 面板可按住标题栏**拖动**，位置会自动记住。\n\n## 添加物品\n\n- 点击面板 **「＋ 添加物品」**：粘贴内容（链接 / 提示词 / 本地文件路径 / MCP JSON / 插件 ID）自动识别类型。\n- **选择本地文件**：添加弹窗里点「📁 选择本地文件」，文件名自动填入，文本内容直接入库。\n- **拖入文件**：把文件直接拖进面板（文本读内容、图片存图）。\n- Agent 回复里的链接/路径可一键 **「⚡ 拾取」** 批量入库。\n\n## 查看与使用\n\n- 右键物品 → **「查看」**：链接卡片、**Markdown 富文本**、HTML 页面、图片、视频、纯文本都会按内容渲染。\n- 双击物品 = 使用（链接打开、提示词发到输入框等）。\n- 右键菜单：发送到对话 / 复制 / 固定 / 编辑 / 移动 / 摧毁；本地路径物品还有 **「打开文件所在位置」**。\n\n## 费用记账\n\n- 底部 **金币/银币/铜币** = 元/角/分，来自全会话 token 费用（DeepSeek 官方动态定价 + 峰谷计价）。\n- **鼠标悬浮金额**：弹出卡片查看近 7 天每天总花费与每个模型花费，移开自动关闭。\n\n## Agent 工具\n\n`backpack_add`（放入物品）/ `backpack_money`（记录费用）/ `backpack_search`（检索背包）。\n\n祝冒险愉快！', flavor: '阅读后绑定', count: 1, createdAt: now, lastUsed: 0, useCount: 0, extra: {}, icon: '' },
         { id: uid(), bagId: 'bag-main', slot: 1, type: 'link', name: 'DeepSeek GitHub', rarity: 1, payload: 'https://github.com/deepseek-ai', flavor: '艾泽拉斯通讯录', count: 1, createdAt: now, lastUsed: 0, useCount: 0, extra: {}, icon: '' },
         { id: uid(), bagId: 'bag-main', slot: 2, type: 'skill', name: 'cordis-plugin-development', rarity: 3, payload: 'cordis-plugin-development', flavor: '插件开发技能书', count: 1, createdAt: now, lastUsed: 0, useCount: 0, extra: {}, icon: '' },
         { id: uid(), bagId: 'bag-main', slot: 3, type: 'prompt', name: '代码审查大师', rarity: 2, payload: '你是一位资深代码审查专家。请审查以下代码，指出潜在 bug、性能问题与安全隐患，并给出改进建议。', flavor: '老练的匠人之魂', count: 1, createdAt: now, lastUsed: 0, useCount: 0, extra: {}, icon: '' },
@@ -679,6 +680,20 @@ export async function apply(ctx, config = {}) {
       case 'get-money': {
         await ensureLoaded()
         return { ok: true, money: moneyOf(money) }
+      }
+      case 'open-file-location': {
+        // 打开本地路径物品所在位置（Windows 资源管理器选中该文件）
+        const p = String((args && args.path) || '').trim().slice(0, 1024)
+        if (!/^(?:[A-Za-z]:[\\/]|[\\/]{2})/.test(p)) return { ok: false, error: '仅支持 Windows 本地路径' }
+        try {
+          const st = await fsp.stat(p)
+          if (!st) return { ok: false, error: '文件不存在' }
+        } catch (e) { return { ok: false, error: '文件不存在' } }
+        try {
+          const child = spawn('explorer.exe', ['/select,' + p], { detached: true, stdio: 'ignore' })
+          child.unref()
+          return { ok: true, path: p }
+        } catch (e) { return { ok: false, error: String((e && e.message) || e) } }
       }
       case 'get-usage': {
         await ensureLoaded()

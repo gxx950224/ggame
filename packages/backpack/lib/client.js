@@ -624,6 +624,10 @@ function apply(ctx) {
       rows.push({ label: '查看', icon: 'open', fn: () => { close(); patch({ modal: { kind: 'preview', itemId: item.id } }) } })
       rows.push({ label: '发送到对话', icon: 'scroll', fn: () => { close(); sendToComposer(String(item.payload || '')) } })
       rows.push({ label: '复制', icon: 'file', fn: () => { close(); copyItem(item) } })
+      // F16 本地路径物品：打开文件所在位置（Windows 资源管理器选中）
+      if (isPath(String(item.payload || ''))) {
+        rows.push({ label: '打开文件所在位置', icon: 'gear', fn: () => { close(); rpc('open-file-location', { path: String(item.payload || '') }).then((res) => { if (!res || !res.ok) toast(((res && res.error) || '打开失败'), 'error') }) } })
+      }
       rows.push({ label: item.fav ? '取消固定' : '固定物品', icon: 'pin', fn: () => { close(); toggleFav(item.id) } })
       rows.push({ label: '编辑', icon: 'edit', fn: () => { close(); patch({ modal: { kind: 'edit', itemId: item.id } }) } })
       rows.push('sep')
@@ -669,6 +673,30 @@ function apply(ctx) {
       const [lib, setLib] = React.useState(null)
       const [skills, setSkills] = React.useState([])
       const [detecting, setDetecting] = React.useState(false)
+      const fileRef = React.useRef(null)
+      // F16 选择本地文件：名字默认文件名；文本文件读内容入库，图片/视频存 data URL
+      const pickFile = () => { const el = fileRef.current; if (el) el.click() }
+      const onFile = (e) => {
+        const f = e.target && e.target.files && e.target.files[0]
+        e.target.value = ''
+        if (!f) return
+        const nm = String(f.name || '未命名')
+        const isText = /\.(txt|md|markdown|json|js|mjs|cjs|ts|tsx|jsx|yml|yaml|toml|csv|html?|htm|css|xml|log|ini|conf|sh|py|java|go|rs|c|cpp|h|sql|vue|svelte)$/i.test(nm) || (typeof f.type === 'string' && f.type.indexOf('text/') === 0)
+        if (isText && f.size <= 512 * 1024) {
+          const r = new FileReader()
+          r.onload = () => { setName(nm); setText(String(r.result || '')) }
+          r.onerror = () => toast('读取文件失败')
+          r.readAsText(f)
+          toast('已读取「' + nm + '」，确认后放入背包')
+        } else if (typeof f.type === 'string' && f.type.indexOf('image/') === 0 && f.size <= 1.5 * 1024 * 1024) {
+          const r = new FileReader()
+          r.onload = () => { const d = String(r.result || ''); addItems([{ type: 'image', name: nm, payload: d, icon: d, rarity: 3, extra: { size: f.size } }], bagId) }
+          r.onerror = () => toast('读取文件失败')
+          r.readAsDataURL(f)
+        } else {
+          toast('该文件类型不适合直接读取，请复制真实路径粘贴（物品将支持「打开文件所在位置」）')
+        }
+      }
       React.useEffect(() => {
         rpc('list-skills').then((r) => { if (r && Array.isArray(r.skills) && r.skills.length) setSkills(r.skills) })
         rpc('list-icons').then((res) => { setLib(res && Array.isArray(res.icons) ? res.icons : []) })
@@ -703,6 +731,11 @@ function apply(ctx) {
         React.createElement('div', { className: 'bp-field' },
           React.createElement('label', null, '粘贴内容（链接 / 提示词 / 路径 / MCP JSON / 插件 ID…）自动识别类型'),
           React.createElement('textarea', { className: 'bp-ta', value: text, placeholder: 'https://…  或  C:\\path\\to\\file  或 一段提示词…', onChange: (e) => setText(e.target.value) }),
+        ),
+        React.createElement('div', { className: 'row', style: { marginBottom: 8 } },
+          React.createElement('button', { className: 'bp-btn', onClick: pickFile }, '📁 选择本地文件'),
+          React.createElement('span', { style: { fontSize: 11, color: '#7a7262' } }, '文本文件直接读入内容；图片/视频存入背包；其它类型请复制真实路径粘贴（右键可打开文件所在位置）'),
+          React.createElement('input', { ref: fileRef, type: 'file', style: { display: 'none' }, onChange: onFile }),
         ),
         detecting ? React.createElement('div', { style: { fontSize: 11, color: '#a49c8c', marginBottom: 8 } }, '识别中…')
           : (spec ? React.createElement('div', { style: { fontSize: 11, color: '#1eff00', marginBottom: 8 } }, '已识别为：' + (TYPES[spec.type] || {}).label) : null),
