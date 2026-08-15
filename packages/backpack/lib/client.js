@@ -179,8 +179,8 @@ function apply(ctx) {
       '.bp-toast[data-type=error]{color:#ff6b5e;border-color:#7a3a34}' +
       '.bp-composer-btn{display:inline-flex;align-items:center;justify-content:center;background:none;border:1px solid rgba(199,182,140,.35);color:#c7b68c;border-radius:6px;width:26px;height:26px;cursor:pointer;padding:0}' +
       '.bp-composer-btn:hover{border-color:#c7b68c;color:#e8e2d4}' +
-      '.bp-loot-btn{display:inline-flex;align-items:center;justify-content:center;background:none;border:1px solid rgba(199,182,140,.3);color:#c7b68c;border-radius:6px;width:24px;height:24px;cursor:pointer;padding:0;opacity:.85}' +
-      '.bp-loot-btn:hover{opacity:1;border-color:#c7b68c}' +
+      '.bp-loot-btn{display:inline-flex;align-items:center;justify-content:center;background:linear-gradient(160deg,#312b23,#1b1712);border:1px solid #4a4338;color:#c7b68c;border-radius:8px;width:26px;height:26px;cursor:pointer;padding:0;font-size:14px;font-weight:700;font-family:inherit;box-shadow:0 2px 6px rgba(0,0,0,.45)}' +
+      '.bp-loot-btn:hover{border-color:#c7b68c;box-shadow:0 0 8px rgba(199,182,140,.35)}' +
       '.bp-media{max-width:100%;max-height:56vh;border-radius:6px;display:block}' +
       '.bp-danger{color:#ff6b5e;font-size:11px;margin-top:6px}'
     )
@@ -1428,40 +1428,36 @@ function apply(ctx) {
     }
 
     function LootAction(props) {
+      const btnRef = React.useRef(null)
       const lootFrom = () => {
-        let snap = null
-        try { if (typeof props.useSession === 'function') snap = props.useSession() } catch (e) { /* ignore */ }
-        const cands = []
-        const push = (v) => { if (cands.indexOf(v) < 0 && cands.length < 40) cands.push(v) }
-        const texts = []
-        const nodes = (snap && Array.isArray(snap.nodes)) ? snap.nodes : []
-        const mid = props.messageId
-        const node = nodes.find((n) => n && n.messageId === mid && n.kind === 'assistant') || null
-        if (node && Array.isArray(node.blocks)) {
-          node.blocks.forEach((b) => {
-            if (!b || (b.kind !== 'text' && b.kind !== 'reasoning')) return
-            const text = String(b.text || '')
-            if (text.trim()) texts.push(text)
-            const urls = text.match(/https?:\/\/[^\s"'<>，。）】]+/g) || []
-            urls.forEach((u) => push(u.replace(/[.,;:!?，。；：！？]+$/, '')))
-            const paths = text.match(/(?:[A-Za-z]:\\[^\s"'<>，。]+|\/(?:[^\s\/"']+\/)+[^\s"'<>，。]+|~\/[^\s"'<>，。]+)/g) || []
-            paths.forEach((p) => {
-              const clean = p.replace(/[.,;:!?，。；：！？]+$/, '')
-              if (clean.length < 4 || clean.length > 1024) return
-              // 跳过被完整 URL 覆盖的路径段（如 /github.com/deepseek-ai 是链接的一部分）
-              if (/^\/[^\\/]/.test(clean) && !/^\/{2}/.test(clean) && urls.some((u) => u.indexOf(clean) >= 0)) return
-              push(clean)
-            })
-          })
+        // 点击 ⚡「拾取到背包」= 直接把这条 AI 回复保存为笔记（不做任何可拾取判断）
+        let text = ''
+        // 1) 优先从会话快照提取该消息的文本块
+        try {
+          let snap = null
+          if (typeof props.useSession === 'function') snap = props.useSession()
+          const mid = props.messageId
+          const nodes = (snap && Array.isArray(snap.nodes)) ? snap.nodes : []
+          const node = nodes.find((n) => n && n.messageId === mid && n.kind === 'assistant') || null
+          if (node && Array.isArray(node.blocks)) {
+            text = node.blocks.filter((b) => b && (b.kind === 'text' || b.kind === 'reasoning')).map((b) => String(b.text || '')).join('\n').trim()
+          }
+        } catch (e) { /* fallthrough to DOM */ }
+        // 2) 快照拿不到时，从按钮所在消息容器直接读取渲染文本（所见即所得）
+        if (!text && btnRef.current) {
+          let el = btnRef.current
+          for (let i = 0; i < 7 && el; i++) {
+            el = el.parentElement
+            if (!el) continue
+            const t = el.innerText ? el.innerText.trim() : ''
+            if (t && t.length >= 20 && t.length <= 12000) { text = t; break }
+          }
         }
-        // 有链接/路径 → 弹出选择窗口；没有 → 直接把整条回复拾取为笔记
-        if (cands.length) { patch({ open: true, modal: { kind: 'loot', candidates: cands.map((v) => ({ value: v })) } }); return }
-        const full = texts.join('\n').trim()
-        if (!full) { toast('这条回复没有可拾取的内容'); return }
-        const title = full.replace(/\s+/g, ' ').slice(0, 20)
-        addItems([{ type: 'note', name: title, payload: full, rarity: 1, extra: {} }], getStore().activeBag)
+        if (!text.trim()) { toast('未能读取这条回复的内容'); return }
+        const title = text.replace(/\s+/g, ' ').slice(0, 20)
+        addItems([{ type: 'note', name: title, payload: text, rarity: 1, extra: {} }], getStore().activeBag)
       }
-      return React.createElement('button', { className: 'bp-loot-btn', type: 'button', title: '拾取到背包', onClick: lootFrom }, Icon('loot', '#c7b68c', 14))
+      return React.createElement('button', { ref: btnRef, className: 'bp-loot-btn', type: 'button', title: '拾取到背包（点击把这条回复存为笔记）', onClick: lootFrom }, 'G')
     }
 
     slotsSvc.inject('shell.overlay', () => slotsSvc.register(
