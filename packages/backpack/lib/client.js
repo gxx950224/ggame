@@ -1433,6 +1433,7 @@ function apply(ctx) {
         try { if (typeof props.useSession === 'function') snap = props.useSession() } catch (e) { /* ignore */ }
         const cands = []
         const push = (v) => { if (cands.indexOf(v) < 0 && cands.length < 40) cands.push(v) }
+        const texts = []
         const nodes = (snap && Array.isArray(snap.nodes)) ? snap.nodes : []
         const mid = props.messageId
         const node = nodes.find((n) => n && n.messageId === mid && n.kind === 'assistant') || null
@@ -1440,14 +1441,25 @@ function apply(ctx) {
           node.blocks.forEach((b) => {
             if (!b || (b.kind !== 'text' && b.kind !== 'reasoning')) return
             const text = String(b.text || '')
+            if (text.trim()) texts.push(text)
             const urls = text.match(/https?:\/\/[^\s"'<>，。）】]+/g) || []
             urls.forEach((u) => push(u.replace(/[.,;:!?，。；：！？]+$/, '')))
             const paths = text.match(/(?:[A-Za-z]:\\[^\s"'<>，。]+|\/(?:[^\s\/"']+\/)+[^\s"'<>，。]+|~\/[^\s"'<>，。]+)/g) || []
-            paths.forEach((p) => { if (p.length >= 4 && p.length <= 1024) push(p.replace(/[.,;:!?，。；：！？]+$/, '')) })
+            paths.forEach((p) => {
+              const clean = p.replace(/[.,;:!?，。；：！？]+$/, '')
+              if (clean.length < 4 || clean.length > 1024) return
+              // 跳过被完整 URL 覆盖的路径段（如 /github.com/deepseek-ai 是链接的一部分）
+              if (/^\/[^\\/]/.test(clean) && !/^\/{2}/.test(clean) && urls.some((u) => u.indexOf(clean) >= 0)) return
+              push(clean)
+            })
           })
         }
-        if (!cands.length) { toast('这条回复里没有发现可拾取的链接或路径'); return }
-        patch({ open: true, modal: { kind: 'loot', candidates: cands.map((v) => ({ value: v })) } })
+        // 有链接/路径 → 弹出选择窗口；没有 → 直接把整条回复拾取为笔记
+        if (cands.length) { patch({ open: true, modal: { kind: 'loot', candidates: cands.map((v) => ({ value: v })) } }); return }
+        const full = texts.join('\n').trim()
+        if (!full) { toast('这条回复没有可拾取的内容'); return }
+        const title = full.replace(/\s+/g, ' ').slice(0, 20)
+        addItems([{ type: 'note', name: title, payload: full, rarity: 1, extra: {} }], getStore().activeBag)
       }
       return React.createElement('button', { className: 'bp-loot-btn', type: 'button', title: '拾取到背包', onClick: lootFrom }, Icon('loot', '#c7b68c', 14))
     }
