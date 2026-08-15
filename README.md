@@ -10,7 +10,7 @@ DeepSeek Harness 插件集合（monorepo）：背包、任务等单体插件。�
 | `@ggame/backpack` | 背包：物品栏 / 袋子 / 货币 / 全会话费用记账 | ✅ |
 | `@ggame/quest` | 任务：任务面板 / 追踪条 / Agent 联动 / 到期提醒 | ✅ |
 | `@ggame/ui-core` | 共享 UI 壳：useStore / 拖拽 / WoW 主题（构建期内联，不独立安装） | — |
-| `@ggame/icons` | 共享图标源与许可说明（31 个魔兽风格 PNG） | — |
+| `@ggame/icons` | 共享图标源与许可说明（28 个魔兽风格 PNG） | — |
 
 ## 安装
 

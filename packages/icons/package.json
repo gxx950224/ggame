@@ -1,0 +1,17 @@
+{
+  "name": "@ggame/icons",
+  "version": "1.0.0",
+  "description": "ggame 共享图标源：31 个魔兽风格 PNG（AI 生成示例素材，仅供个人使用与演示，商用前请替换）。",
+  "type": "module",
+  "files": [
+    "icons",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/USER/ggame.git",
+    "directory": "packages/icons"
+  },
+  "homepage": "https://github.com/USER/ggame/tree/main/packages/icons",
+  "license": "MIT"
+}
