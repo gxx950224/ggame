@@ -51,6 +51,20 @@ DeepSeek Harness 常驻插件：仿魔兽世界任务系统。按 `L` 打开任�
 
 6. 重启 DSH：`dsh web`。左下角出现卷轴按钮（背包图标左侧 5px）。
 
+### 🤖 AI 一键安装提示词（复制发给 DSH Agent）
+
+```
+请帮我在 DSH 中安装 @ggame/quest 任务插件。请执行：
+1. cd ~/.dsh/profiles/web
+2. pnpm add @ggame/quest
+3. 编辑 package.json，在 dsh.profile.bundles 数组里追加 "@ggame/quest"（保留原有项）
+4. 编辑 cordis.patch.yml，在末尾追加：
+   - id: quest
+     config: {}
+5. 执行 pnpm install
+6. 重启 dsh web
+```
+
 ## 使用
 
 | 操作 | 方式 |

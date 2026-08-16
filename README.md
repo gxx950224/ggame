@@ -37,6 +37,24 @@ pnpm add @ggame/quest
 
 然后编辑 profile 的 `package.json`（`dsh.profile.bundles` 加入要用的包）、`cordis.patch.yml` 加入对应行，重启 DSH。详见各包 README。
 
+### 🤖 AI 一键安装提示词（复制发给 DSH Agent，让它自动完成安装）
+
+```
+请帮我在 DSH 中安装 ggame 整合包插件（背包 + 任务）。请执行：
+1. cd ~/.dsh/profiles/web
+2. pnpm add @ggame/plugins
+3. 编辑 package.json，在 dsh.profile.bundles 数组里追加 "@ggame/backpack" 和 "@ggame/quest"（保留原有项）
+4. 编辑 cordis.patch.yml，在末尾追加：
+   - id: backpack
+     config: {}
+   - id: quest
+     config: {}
+5. 执行 pnpm install
+6. 重启 dsh web
+```
+
+> 只装背包：把第 2 步换成 `pnpm add @ggame/backpack`，第 3、4 步只追加 backpack；只装任务同理换成 `@ggame/quest`。
+
 ## 特性一览
 
 **@ggame/backpack（背包）**

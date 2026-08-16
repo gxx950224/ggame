@@ -5,7 +5,7 @@ import { seed, sanitize, findQuest, newQuest, makeObjective, objectiveDone, ques
 // ── seed / sanitize ──
 const s = seed()
 assert.equal(s.categories.length >= 3, true)
-assert.ok(s.quests.length >= 2)
+assert.ok(s.quests.length >= 1)
 assert.ok(s.quests.every((q) => q.id && q.title && LEVEL_SET.includes(q.level)))
 
 const clean = sanitize(s)

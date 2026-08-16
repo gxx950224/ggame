@@ -65,6 +65,22 @@ DeepSeek Harness 常驻插件：魔兽世界风格的物品栏 / 背包系统。
 
 > 若你的 profile 已启用其他 bundle（如 vision-toolkit），把 `@ggame/backpack` 追加进 `bundles` 列表即可，互不影响。
 
+### 🤖 AI 一键安装提示词（复制发给 DSH Agent）
+
+```
+请帮我在 DSH 中安装 @ggame/backpack 背包插件。请执行：
+1. cd ~/.dsh/profiles/web
+2. pnpm add @ggame/backpack
+3. 编辑 package.json，在 dsh.profile.bundles 数组里追加 "@ggame/backpack"（保留原有项）
+4. 编辑 cordis.patch.yml，在末尾追加：
+   - id: backpack
+     config:
+       autoScan: true
+       scanIntervalSec: 60
+5. 执行 pnpm install
+6. 重启 dsh web
+```
+
 ## 截图
 
 | 背包面板 | 物品查看（Markdown 详情） |

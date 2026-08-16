@@ -61,14 +61,6 @@ export function seed() {
         ],
         rewards: '经验 +50', order: 0, icon: '', createdAt: now, updatedAt: now,
       },
-      {
-        id: uid(), title: '学习 Agent 联动', level: 3, category: '日常', status: 'active',
-        description: '在对话里说：把「写周报」记成任务，或 quest_complete「学习 Agent 联动」。',
-        objectives: [
-          makeObjective({ text: '调用 quest_add 创建任务', target: 1, current: 0 }),
-        ],
-        rewards: '成就：自动化', order: 1, icon: '', createdAt: now, updatedAt: now,
-      },
     ],
   }
 }
