@@ -1309,7 +1309,7 @@ function apply(ctx) {
 
     function OverlayRoot() {
       const s = useStore()
-      React.useEffect(() => { loadData() }, [])
+      React.useEffect(() => { if (s.open) loadData() }, [s.open])
       React.useEffect(() => {
         if (typeof window === 'undefined' || !window.addEventListener) return
         const onKey = (e) => {
