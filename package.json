@@ -1,6 +1,6 @@
 {
   "name": "@ggame/plugins",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "ggame —— DSH 插件整合包：背包 / 任务 等单体插件的 monorepo，可按整合包或单体安装。",
   "type": "module",
   "repository": {
