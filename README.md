@@ -25,7 +25,7 @@ DeepSeek Harness 插件集合（monorepo）：背包、任务等单体插件。�
 ### 方式一：整合包（全部插件）
 ```bash
 # 在 DSH web profile 目录
-pnpm add @ggame/plugins
+pnpm add @ggame/plugins@1.0.2
 ```
 
 ### 方式二：单体插件（只装其中一个）
