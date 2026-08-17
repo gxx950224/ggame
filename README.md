@@ -55,6 +55,26 @@ pnpm add @ggame/quest
 
 > 只装背包：把第 2 步换成 `pnpm add @ggame/backpack`，第 3、4 步只追加 backpack；只装任务同理换成 `@ggame/quest`。
 
+## 升级
+
+整合包是一个聚合包：**子包更新时，`@ggame/plugins` 也会同步发新版本并抬高子包依赖**。但建议升级时把三个包都显式更新，避免 pnpm 解析歧义：
+
+```bash
+cd ~/.dsh/profiles/web
+pnpm add @ggame/plugins@latest @ggame/backpack@latest @ggame/quest@latest
+pnpm install
+```
+
+> 建议把子包也写成**显式依赖**（你实际注册 bundle 的就是它们）：
+> ```json
+> "dependencies": {
+>   "@ggame/plugins": "1.0.3",
+>   "@ggame/backpack": "1.0.2",
+>   "@ggame/quest": "1.0.1"
+> }
+> ```
+> 升级完成后固定具体版本，避免 `pnpm install` 意外拉到不兼容版本。
+
 ## 特性一览
 
 **@ggame/backpack（背包）**

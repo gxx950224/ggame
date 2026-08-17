@@ -78,6 +78,28 @@ cp -r ggame/packages/backpack ggame/packages/quest ~/.dsh/profiles/web/packages/
 
 > 单体仓库：https://github.com/gxx950224/backpack 、https://github.com/gxx950224/quest
 
+## 升级
+
+`@ggame/plugins` 是聚合包，子包更新时会同步发布新版本并抬高依赖。升级时建议三个包一起显式更新：
+
+```bash
+cd ~/.dsh/profiles/web
+pnpm add @ggame/plugins@latest @ggame/backpack@latest @ggame/quest@latest
+pnpm install
+```
+
+**建议把子包写为显式依赖**（你实际注册 bundle 的就是它们），并固定具体版本：
+
+```json
+"dependencies": {
+  "@ggame/plugins": "1.0.3",
+  "@ggame/backpack": "1.0.2",
+  "@ggame/quest": "1.0.1"
+}
+```
+
+> 原因：只依赖聚合包时，pnpm 对子包版本的解析受 lockfile 与解析策略影响，`pnpm update --latest` 不一定自动追到最新子包；显式列出 + 固定版本最稳。
+
 ## 配置项
 
 - **背包**：`cordis.patch.yml` 的 backpack `config` 支持 `autoScan`（默认 true，定时扫描会话记账）、`scanIntervalSec`（默认 60）、`peakPricing`（默认 true，峰谷计价）、`prices`/`modelPrices`（按模型定价）。

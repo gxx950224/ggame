@@ -1,6 +1,6 @@
 {
   "name": "@ggame/plugins",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "ggame —— DSH 插件整合包：背包 / 任务 等单体插件的 monorepo，可按整合包或单体安装。",
   "type": "module",
   "repository": {
@@ -12,8 +12,8 @@
     "url": "https://github.com/gxx950224/ggame/issues"
   },
   "dependencies": {
-    "@ggame/backpack": "^1.0.0",
-    "@ggame/quest": "^1.0.0"
+    "@ggame/backpack": "^1.0.2",
+    "@ggame/quest": "^1.0.1"
   },
   "scripts": {
     "build": "node packages/backpack/scripts/build-client.mjs && node packages/quest/scripts/build-client.mjs",
