@@ -42,7 +42,7 @@ pnpm add @ggame/quest
 ```
 请帮我在 DSH 中安装 ggame 整合包插件（背包 + 任务）。请执行：
 1. cd ~/.dsh/profiles/web
-2. pnpm add @ggame/plugins
+2. pnpm add @ggame/plugins@1.0.2
 3. 编辑 package.json，在 dsh.profile.bundles 数组里追加 "@ggame/backpack" 和 "@ggame/quest"（保留原有项）
 4. 编辑 cordis.patch.yml，在末尾追加：
    - id: backpack
